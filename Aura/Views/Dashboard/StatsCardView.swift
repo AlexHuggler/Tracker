@@ -6,6 +6,10 @@ struct StatsCardView: View {
     let subtitle: String?
     var accentColor: Color = AuraTheme.accent
 
+    @State private var displayedValue: String = ""
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     init(title: String, value: String, subtitle: String? = nil, accentColor: Color = AuraTheme.accent) {
         self.title = title
         self.value = value
@@ -20,9 +24,10 @@ struct StatsCardView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            Text(value)
+            Text(hasAppeared ? value : " ")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(accentColor)
+                .contentTransition(.numericText(value: Double(value.filter(\.isNumber).prefix(4)) ?? 0))
 
             if let subtitle {
                 Text(subtitle)
@@ -34,10 +39,17 @@ struct StatsCardView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
         .padding(.horizontal, 8)
-        .background {
-            RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
+        .auraCard()
+        .opacity(hasAppeared ? 1 : 0)
+        .offset(y: hasAppeared ? 0 : 8)
+        .onAppear {
+            if reduceMotion {
+                hasAppeared = true
+            } else {
+                withAnimation(.easeOut(duration: 0.4)) {
+                    hasAppeared = true
+                }
+            }
         }
         .accessibilityElement(children: .combine)
     }

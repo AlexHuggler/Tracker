@@ -22,7 +22,7 @@ struct PatternView: View {
         Group {
             if !appState.isPremium {
                 premiumGate
-            } else if episodes.count < PatternEngine.minimumEpisodes {
+            } else if episodes.count < PatternEngine.preliminaryEpisodes {
                 insufficientData
             } else {
                 patternsList
@@ -30,31 +30,25 @@ struct PatternView: View {
         }
         .navigationTitle("Patterns")
         .task {
-            if appState.isPremium && episodes.count >= PatternEngine.minimumEpisodes {
+            if appState.isPremium && episodes.count >= PatternEngine.preliminaryEpisodes {
                 await runAnalysis()
             }
         }
     }
 
     private var premiumGate: some View {
-        ContentUnavailableView {
-            Label("Pattern Analysis", systemImage: "waveform.path.ecg")
-        } description: {
-            Text("Unlock pattern detection to discover what triggers your episodes.")
-        } actions: {
-            Button("Unlock Patterns") {
-                appState.showingPaywall = true
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AuraTheme.accent)
-        }
+        PremiumGateView(
+            feature: "Pattern Analysis",
+            icon: "waveform.path.ecg",
+            description: "Unlock pattern detection to discover what triggers your episodes."
+        )
     }
 
     private var insufficientData: some View {
         ContentUnavailableView {
             Label("Not Enough Data", systemImage: "chart.bar.doc.horizontal")
         } description: {
-            Text("Log at least \(PatternEngine.minimumEpisodes) episodes to start seeing patterns. You have \(episodes.count) so far.")
+            Text("Log at least \(PatternEngine.preliminaryEpisodes) episodes to start seeing patterns. You have \(episodes.count) so far.")
         }
     }
 
@@ -188,11 +182,7 @@ struct PatternView: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(AuraTheme.cardPadding)
-        .background {
-            RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
-        }
+        .auraCard()
         .padding(.horizontal)
     }
 

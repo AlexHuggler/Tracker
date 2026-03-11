@@ -2,22 +2,25 @@ import Foundation
 import SwiftData
 
 enum ConfidenceLevel: String, Codable {
+    case preliminary = "Early Signal"
     case likely = "Likely"
     case strong = "Strong"
     case veryStrong = "Very Strong"
 
-    static func from(correlation: Double) -> ConfidenceLevel? {
+    static func from(correlation: Double, isPreliminary: Bool = false) -> ConfidenceLevel? {
         let abs = Swift.abs(correlation)
         switch abs {
         case 0.90...: return .veryStrong
         case 0.75..<0.90: return .strong
         case 0.60..<0.75: return .likely
+        case 0.50..<0.60 where isPreliminary: return .preliminary
         default: return nil
         }
     }
 
     var icon: String {
         switch self {
+        case .preliminary: return "sparkles"
         case .likely: return "chart.bar.fill"
         case .strong: return "chart.bar.xaxis.ascending"
         case .veryStrong: return "checkmark.seal.fill"
@@ -69,12 +72,17 @@ struct MedicationEffectiveness: Identifiable {
 
 actor PatternEngine {
     static let minimumEpisodes = 10
+    static let preliminaryEpisodes = 5
     static let minimumCorrelation = 0.60
+    static let preliminaryCorrelation = 0.50
 
     // MARK: - Trigger Correlations
 
     func analyzeTriggerCorrelations(episodes: [Episode]) -> [TriggerCorrelation] {
-        guard episodes.count >= Self.minimumEpisodes else { return [] }
+        let isPreliminary = episodes.count < Self.minimumEpisodes
+        guard episodes.count >= Self.preliminaryEpisodes else { return [] }
+
+        let minCorrelation = isPreliminary ? Self.preliminaryCorrelation : Self.minimumCorrelation
 
         var triggerCounts: [String: Int] = [:]
         for episode in episodes {
@@ -86,8 +94,8 @@ actor PatternEngine {
         var results: [TriggerCorrelation] = []
         for (triggerName, count) in triggerCounts {
             let proportion = Double(count) / Double(episodes.count)
-            guard proportion >= Self.minimumCorrelation,
-                  let confidence = ConfidenceLevel.from(correlation: proportion) else {
+            guard proportion >= minCorrelation,
+                  let confidence = ConfidenceLevel.from(correlation: proportion, isPreliminary: isPreliminary) else {
                 continue
             }
 
@@ -106,7 +114,7 @@ actor PatternEngine {
     // MARK: - Temporal Patterns
 
     func analyzeTemporalPatterns(episodes: [Episode]) -> [TemporalPattern] {
-        guard episodes.count >= Self.minimumEpisodes else { return [] }
+        guard episodes.count >= Self.preliminaryEpisodes else { return [] }
 
         var patterns: [TemporalPattern] = []
 
@@ -165,7 +173,7 @@ actor PatternEngine {
         episodes: [Episode],
         dailyLogs: [DailyLog]
     ) -> [WeatherPattern] {
-        guard episodes.count >= Self.minimumEpisodes else { return [] }
+        guard episodes.count >= Self.preliminaryEpisodes else { return [] }
 
         let logsByDate = Dictionary(grouping: dailyLogs) { $0.date.startOfDay }
         let episodeDates = Set(episodes.map { $0.timestamp.startOfDay })
@@ -238,7 +246,13 @@ actor PatternEngine {
                     }
                 }
             }
-            // Note: painReductions requires an endPainLevel field on Episode (not yet available)
+                // Calculate pain reduction if endPainLevel is available
+                if let endPain = episode.endPainLevel {
+                    let reduction = Double(episode.painLevel - endPain)
+                    if reduction > 0 {
+                        painReductions.append(reduction)
+                    }
+                }
 
             let avgRelief = reliefTimes.isEmpty ? nil : reliefTimes.reduce(0, +) / Double(reliefTimes.count)
             let avgPainReduction = painReductions.isEmpty ? nil : painReductions.reduce(0, +) / Double(painReductions.count)

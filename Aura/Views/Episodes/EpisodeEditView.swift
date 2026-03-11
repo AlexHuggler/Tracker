@@ -17,6 +17,7 @@ struct EpisodeEditView: View {
     @State private var episodeDate: Date
     @State private var hasEndTime: Bool
     @State private var endDate: Date
+    @State private var endPainLevel: Int?
 
     init(episode: Episode) {
         self.episode = episode
@@ -27,6 +28,7 @@ struct EpisodeEditView: View {
         self._episodeDate = State(initialValue: episode.timestamp)
         self._hasEndTime = State(initialValue: episode.endTimestamp != nil)
         self._endDate = State(initialValue: episode.endTimestamp ?? Date())
+        self._endPainLevel = State(initialValue: episode.endPainLevel)
     }
 
     private var availableSymptoms: [String] {
@@ -68,6 +70,19 @@ struct EpisodeEditView: View {
                         if hasEndTime {
                             DatePicker("End", selection: $endDate)
                                 .font(AuraTheme.bodyFont)
+
+                            Toggle("Record end pain level", isOn: Binding(
+                                get: { endPainLevel != nil },
+                                set: { endPainLevel = $0 ? painLevel : nil }
+                            ))
+                            .font(AuraTheme.bodyFont)
+
+                            if endPainLevel != nil {
+                                PainSliderView(painLevel: Binding(
+                                    get: { endPainLevel ?? 0 },
+                                    set: { endPainLevel = $0 }
+                                ))
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -129,6 +144,7 @@ struct EpisodeEditView: View {
         episode.painLevel = painLevel
         episode.timestamp = episodeDate
         episode.endTimestamp = hasEndTime ? endDate : nil
+        episode.endPainLevel = hasEndTime ? endPainLevel : nil
         episode.notes = notes.isEmpty ? nil : notes
 
         // Update symptoms
