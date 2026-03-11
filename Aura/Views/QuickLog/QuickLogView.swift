@@ -253,7 +253,8 @@ struct MedicationQuickButton: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(isTaken ? .white : AuraTheme.accent)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 14)
+                    .frame(minHeight: 44)
                     .background {
                         Capsule()
                             .fill(isTaken ? AuraTheme.accent : Color.clear)

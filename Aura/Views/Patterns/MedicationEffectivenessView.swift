@@ -35,6 +35,8 @@ struct MedicationEffectivenessView: View {
                                         .foregroundStyle(.secondary)
                                         .multilineTextAlignment(.center)
                                 }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("Average \(Int(relief)) minutes to relief")
                             }
 
                             if let reduction = med.avgPainReduction {
@@ -47,6 +49,8 @@ struct MedicationEffectivenessView: View {
                                         .foregroundStyle(.secondary)
                                         .multilineTextAlignment(.center)
                                 }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("Average pain reduction: \(String(format: "%.1f", reduction)) points")
                             }
 
                             VStack(spacing: 2) {
@@ -58,6 +62,8 @@ struct MedicationEffectivenessView: View {
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Used \(med.timesUsed) times")
                         }
                         .frame(maxWidth: .infinity)
                     }

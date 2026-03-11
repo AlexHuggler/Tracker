@@ -1,6 +1,7 @@
 import UIKit
 import PDFKit
 
+@MainActor
 final class PDFReportGenerator {
     struct ReportConfig {
         var patientName: String

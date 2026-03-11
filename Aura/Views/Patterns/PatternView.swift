@@ -196,6 +196,7 @@ struct PatternView: View {
         .padding(.horizontal)
     }
 
+    @MainActor
     private func runAnalysis() async {
         isAnalyzing = true
         defer { isAnalyzing = false }

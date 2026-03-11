@@ -4,7 +4,6 @@ struct PainSliderView: View {
     @Binding var painLevel: Int
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private let sliderWidth: CGFloat = 320
     private let thumbSize: CGFloat = 44
     private let trackHeight: CGFloat = 16
     private var lastHapticLevel: Int = -1

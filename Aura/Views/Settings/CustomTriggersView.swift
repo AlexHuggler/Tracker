@@ -21,6 +21,7 @@ struct CustomTriggersView: View {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 28))
                             .foregroundStyle(AuraTheme.accent)
+                            .frame(minWidth: 44, minHeight: 44)
                     }
                     .disabled(newTriggerName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }

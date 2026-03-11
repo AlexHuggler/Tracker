@@ -22,15 +22,54 @@ struct StatusWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<StatusWidgetEntry>) -> Void) {
-        // In a real implementation, this would query SwiftData via AppIntents or shared container
-        let entry = StatusWidgetEntry(
-            date: Date(),
-            daysSinceLastEpisode: 0,
-            recentDayPainLevels: Array(repeating: nil, count: 7)
-        )
+        let entry = fetchEntry()
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
+    }
+
+    private func fetchEntry() -> StatusWidgetEntry {
+        guard let container = try? SharedModelContainer.makeContainer() else {
+            return StatusWidgetEntry(date: Date(), daysSinceLastEpisode: 0, recentDayPainLevels: Array(repeating: nil, count: 7))
+        }
+
+        let context = ModelContext(container)
+        let now = Date()
+        let calendar = Calendar.current
+
+        // Fetch most recent episode for "days since"
+        var daysSince = 0
+        var recentDescriptor = FetchDescriptor<Episode>(
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        recentDescriptor.fetchLimit = 1
+        if let lastEpisode = try? context.fetch(recentDescriptor).first {
+            daysSince = max(0, calendar.dateComponents([.day], from: lastEpisode.timestamp, to: now).day ?? 0)
+        }
+
+        // Build 7-day pain levels
+        let sevenDaysAgo = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: now)) ?? now
+        let predicate = #Predicate<Episode> { episode in
+            episode.timestamp >= sevenDaysAgo
+        }
+        var weekDescriptor = FetchDescriptor<Episode>(predicate: predicate)
+        weekDescriptor.fetchLimit = 100
+
+        var painByDay: [Date: Int] = [:]
+        if let episodes = try? context.fetch(weekDescriptor) {
+            for episode in episodes {
+                let day = calendar.startOfDay(for: episode.timestamp)
+                painByDay[day] = max(painByDay[day] ?? 0, episode.painLevel)
+            }
+        }
+
+        var painLevels: [Int?] = []
+        for offset in (0..<7).reversed() {
+            let day = calendar.date(byAdding: .day, value: -offset, to: calendar.startOfDay(for: now)) ?? now
+            painLevels.append(painByDay[day])
+        }
+
+        return StatusWidgetEntry(date: now, daysSinceLastEpisode: daysSince, recentDayPainLevels: painLevels)
     }
 }
 

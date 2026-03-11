@@ -33,7 +33,7 @@ struct TriggerCorrelationView: View {
                                 Spacer()
                                 Text("\(String(format: "%.0f", correlation.percentage))%")
                                     .font(.system(size: 15, weight: .bold, design: .rounded))
-                                    .foregroundStyle(AuraTheme.painColor(for: Int(correlation.correlationStrength * 10)))
+                                    .foregroundStyle(AuraTheme.painColor(for: Int(correlation.frequency * 10)))
                             }
 
                             // Bar
@@ -43,8 +43,8 @@ struct TriggerCorrelationView: View {
                                         .fill(Color(.systemGray5))
 
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(AuraTheme.painColor(for: Int(correlation.correlationStrength * 10)))
-                                        .frame(width: geometry.size.width * correlation.correlationStrength)
+                                        .fill(AuraTheme.painColor(for: Int(correlation.frequency * 10)))
+                                        .frame(width: geometry.size.width * correlation.frequency)
                                 }
                             }
                             .frame(height: 12)
@@ -80,7 +80,7 @@ struct TriggerCorrelationView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text("Correlation is not causation. Discuss patterns with your doctor.")
+                    Text("Frequency is not causation. Discuss patterns with your doctor.")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -92,7 +92,7 @@ struct TriggerCorrelationView: View {
             .padding(.top, 8)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Trigger Correlations")
+        .navigationTitle("Trigger Frequency")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

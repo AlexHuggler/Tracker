@@ -35,7 +35,7 @@ struct MedicationReminderView: View {
                     )
                     .onChange(of: reminderTime) { _, newTime in
                         medication.reminderTime = newTime
-                        NotificationManager.shared.scheduleReminder(for: medication, at: newTime)
+                        Task { try? await NotificationManager.shared.scheduleReminder(for: medication, at: newTime) }
                     }
                 }
             } footer: {
@@ -62,7 +62,7 @@ struct MedicationReminderView: View {
             let granted = await NotificationManager.shared.requestAuthorization()
             if granted {
                 medication.reminderTime = reminderTime
-                NotificationManager.shared.scheduleReminder(for: medication, at: reminderTime)
+                try? await NotificationManager.shared.scheduleReminder(for: medication, at: reminderTime)
             } else {
                 reminderEnabled = false
             }

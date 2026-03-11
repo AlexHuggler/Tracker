@@ -25,13 +25,16 @@ enum ConfidenceLevel: String, Codable {
     }
 }
 
+/// Represents how frequently a trigger appears across episodes.
+/// Note: Because triggers are only logged during episodes (no non-episode baseline),
+/// this is a frequency measure, not a statistical correlation.
 struct TriggerCorrelation: Identifiable {
     let id = UUID()
     let triggerName: String
     let episodesWithTrigger: Int
     let totalEpisodes: Int
-    let daysWithTriggerNoEpisode: Int
-    let correlationStrength: Double
+    /// Proportion of episodes where this trigger was logged (0–1).
+    let frequency: Double
     let confidence: ConfidenceLevel
 
     var percentage: Double {
@@ -92,13 +95,12 @@ actor PatternEngine {
                 triggerName: triggerName,
                 episodesWithTrigger: count,
                 totalEpisodes: episodes.count,
-                daysWithTriggerNoEpisode: 0,
-                correlationStrength: proportion,
+                frequency: proportion,
                 confidence: confidence
             ))
         }
 
-        return results.sorted { $0.correlationStrength > $1.correlationStrength }
+        return results.sorted { $0.frequency > $1.frequency }
     }
 
     // MARK: - Temporal Patterns
@@ -184,10 +186,20 @@ actor PatternEngine {
 
         let avgEpisodePressure = pressureBeforeEpisode.reduce(0, +) / Double(pressureBeforeEpisode.count)
         let avgNonEpisodePressure = pressureNonEpisode.reduce(0, +) / Double(pressureNonEpisode.count)
-        let pressureDiff = avgNonEpisodePressure - avgEpisodePressure
 
-        if abs(pressureDiff) > 2.0 {
-            let confidence: ConfidenceLevel = abs(pressureDiff) > 5.0 ? .strong : .likely
+        // Build paired arrays: pressure vs binary episode indicator (1 = episode day, 0 = no episode)
+        var pressures: [Double] = []
+        var episodeIndicators: [Double] = []
+        for (date, logs) in logsByDate {
+            guard let pressure = logs.first?.weatherPressure else { continue }
+            pressures.append(pressure)
+            episodeIndicators.append(episodeDates.contains(date) ? 1.0 : 0.0)
+        }
+
+        let r = pearsonCorrelation(x: pressures, y: episodeIndicators)
+
+        if abs(r) > 0.15 {
+            let confidence: ConfidenceLevel = abs(r) > 0.4 ? .strong : .likely
             return [WeatherPattern(
                 description: "Barometric pressure may be a factor",
                 avgPressureDropBeforeEpisode: avgEpisodePressure,
@@ -218,7 +230,7 @@ actor PatternEngine {
             for dose in doses {
                 guard let episode = dose.episode else { continue }
 
-                // If episode has end time, calculate relief time
+                // If episode has end time, calculate relief time from dose to episode end
                 if let endTime = episode.endTimestamp {
                     let minutes = endTime.timeIntervalSince(dose.timestamp) / 60
                     if minutes > 0 && minutes < 480 {
@@ -226,6 +238,7 @@ actor PatternEngine {
                     }
                 }
             }
+            // Note: painReductions requires an endPainLevel field on Episode (not yet available)
 
             let avgRelief = reliefTimes.isEmpty ? nil : reliefTimes.reduce(0, +) / Double(reliefTimes.count)
             let avgPainReduction = painReductions.isEmpty ? nil : painReductions.reduce(0, +) / Double(painReductions.count)

@@ -1,5 +1,8 @@
 import UserNotifications
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.aura.app", category: "Notifications")
 
 final class NotificationManager {
     static let shared = NotificationManager()
@@ -11,6 +14,7 @@ final class NotificationManager {
         do {
             return try await center.requestAuthorization(options: [.alert, .sound, .badge])
         } catch {
+            logger.error("Failed to request notification authorization: \(error.localizedDescription)")
             return false
         }
     }
@@ -20,7 +24,7 @@ final class NotificationManager {
         return settings.authorizationStatus == .authorized
     }
 
-    func scheduleReminder(for medication: Medication, at time: Date) {
+    func scheduleReminder(for medication: Medication, at time: Date) async throws {
         let content = UNMutableNotificationContent()
         content.title = "Time for your \(medication.name)"
         content.body = "\(medication.dosage) — \(medication.medicationType.rawValue)"
@@ -34,7 +38,8 @@ final class NotificationManager {
         let identifier = "med-reminder-\(medication.id.uuidString)"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        center.add(request)
+        try await center.add(request)
+        logger.info("Scheduled reminder for \(medication.name) at \(time.shortTimeString)")
     }
 
     func cancelReminder(for medication: Medication) {

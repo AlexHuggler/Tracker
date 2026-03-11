@@ -6,24 +6,8 @@ struct AuraApp: App {
     @State private var appState = AppState()
 
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Episode.self,
-            Symptom.self,
-            Trigger.self,
-            Medication.self,
-            MedicationDose.self,
-            DailyLog.self,
-            ConditionProfile.self,
-            DoctorReport.self,
-        ])
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .none
-        )
-
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try SharedModelContainer.makeContainer()
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

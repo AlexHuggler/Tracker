@@ -90,7 +90,7 @@ struct ConditionCard: View {
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 90)
+            .frame(minHeight: 90)
             .background {
                 RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
                     .fill(isSelected ? AuraTheme.accent : Color(.systemBackground))

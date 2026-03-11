@@ -36,6 +36,7 @@ struct ConditionProfileView: View {
                             } label: {
                                 Image(systemName: "minus.circle.fill")
                                     .foregroundStyle(.red)
+                                    .frame(minWidth: 44, minHeight: 44)
                             }
                         }
                     }
@@ -57,6 +58,7 @@ struct ConditionProfileView: View {
                             } label: {
                                 Image(systemName: "plus.circle.fill")
                                     .foregroundStyle(AuraTheme.accent)
+                                    .frame(minWidth: 44, minHeight: 44)
                             }
                         }
                     }

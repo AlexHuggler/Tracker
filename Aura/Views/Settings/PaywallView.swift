@@ -6,6 +6,7 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isPurchasing = false
     @State private var errorMessage: String?
+    @State private var product: Product?
 
     private let productID = "com.aura.premium.lifetime"
 
@@ -44,7 +45,7 @@ struct PaywallView: View {
 
                     // Price
                     VStack(spacing: 8) {
-                        Text("$7.99")
+                        Text(product?.displayPrice ?? "$7.99")
                             .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundStyle(AuraTheme.accent)
                         Text("one-time purchase")
@@ -71,7 +72,7 @@ struct PaywallView: View {
                                     .tint(.white)
                                     .padding(.trailing, 4)
                             }
-                            Text(isPurchasing ? "Processing..." : "Unlock Premium — $7.99")
+                            Text(isPurchasing ? "Processing..." : "Unlock Premium — \(product?.displayPrice ?? "$7.99")")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundStyle(.white)
                         }
@@ -110,6 +111,9 @@ struct PaywallView: View {
                         dismiss()
                     }
                 }
+            }
+            .task {
+                product = try? await Product.products(for: [productID]).first
             }
         }
     }

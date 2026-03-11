@@ -1,12 +1,15 @@
 import Foundation
 import WeatherKit
 import CoreLocation
+import os
+
+private let logger = Logger(subsystem: "com.aura.app", category: "Weather")
 
 actor WeatherService {
     static let shared = WeatherService()
     private let weatherService = WeatherKit.WeatherService.shared
 
-    struct WeatherSnapshot {
+    struct WeatherSnapshot: Sendable {
         let pressure: Double // hPa
         let temperature: Double // Celsius
         let humidity: Double // 0-1
@@ -25,17 +28,14 @@ actor WeatherService {
         )
     }
 
-    func updateDailyLog(_ log: DailyLog, latitude: Double, longitude: Double) async {
+    /// Fetches weather data and returns a snapshot. Returns nil on failure.
+    /// Caller on MainActor should apply values to the DailyLog model.
+    func fetchAndCache(latitude: Double, longitude: Double) async -> WeatherSnapshot? {
         do {
-            let snapshot = try await fetchCurrentWeather(latitude: latitude, longitude: longitude)
-            await MainActor.run {
-                log.weatherPressure = snapshot.pressure
-                log.weatherTemperature = snapshot.temperature
-                log.weatherHumidity = snapshot.humidity
-                log.weatherDescription = snapshot.description
-            }
+            return try await fetchCurrentWeather(latitude: latitude, longitude: longitude)
         } catch {
-            // Weather data is optional — silently fail
+            logger.error("Weather fetch failed: \(error.localizedDescription)")
+            return nil
         }
     }
 }

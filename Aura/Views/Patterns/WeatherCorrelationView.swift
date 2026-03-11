@@ -53,6 +53,8 @@ struct WeatherCorrelationView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Average pressure on episode days: \(String(format: "%.1f", pattern.avgPressureDropBeforeEpisode)) hectopascals")
 
                         Text("vs")
                             .font(AuraTheme.captionFont)
@@ -70,6 +72,8 @@ struct WeatherCorrelationView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Average pressure on non-episode days: \(String(format: "%.1f", pattern.avgPressureDropNonEpisode)) hectopascals")
                     }
                 }
                 .padding(AuraTheme.cardPadding)
