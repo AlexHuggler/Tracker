@@ -134,11 +134,7 @@ struct MedicationRowView: View {
     }
 
     private var medicationTypeColor: Color {
-        switch medication.medicationType {
-        case .acute: return AuraTheme.painSevere
-        case .preventive: return AuraTheme.accent
-        case .supplement: return AuraTheme.painMild
-        }
+        medication.medicationType.color
     }
 }
 

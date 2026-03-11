@@ -8,12 +8,47 @@ struct EpisodeListView: View {
     @Query(sort: \Episode.timestamp, order: .reverse)
     private var allEpisodes: [Episode]
 
+    @State private var searchText = ""
+    @State private var painFilter: PainFilter = .all
+
+    enum PainFilter: String, CaseIterable {
+        case all = "All"
+        case mild = "Mild"
+        case moderate = "Moderate"
+        case severe = "Severe"
+        case extreme = "Extreme"
+    }
+
     private var visibleEpisodes: [Episode] {
+        var episodes: [Episode]
         if appState.isPremium {
-            return allEpisodes
+            episodes = allEpisodes
+        } else {
+            let cutoff = Date().adding(days: -AppState.freeHistoryDays)
+            episodes = allEpisodes.filter { $0.timestamp >= cutoff }
         }
-        let cutoff = Date().adding(days: -AppState.freeHistoryDays)
-        return allEpisodes.filter { $0.timestamp >= cutoff }
+
+        // Apply pain filter
+        switch painFilter {
+        case .all: break
+        case .mild: episodes = episodes.filter { $0.painLevel <= 3 }
+        case .moderate: episodes = episodes.filter { (4...6).contains($0.painLevel) }
+        case .severe: episodes = episodes.filter { (7...8).contains($0.painLevel) }
+        case .extreme: episodes = episodes.filter { $0.painLevel >= 9 }
+        }
+
+        // Apply search text
+        if !searchText.isEmpty {
+            let query = searchText.lowercased()
+            episodes = episodes.filter { episode in
+                if episode.notes?.lowercased().contains(query) == true { return true }
+                if episode.symptoms?.contains(where: { $0.name.lowercased().contains(query) }) == true { return true }
+                if episode.triggers?.contains(where: { $0.name.lowercased().contains(query) }) == true { return true }
+                return false
+            }
+        }
+
+        return episodes
     }
 
     private var groupedEpisodes: [(String, [Episode])] {
@@ -75,8 +110,26 @@ struct EpisodeListView: View {
                 .listStyle(.insetGrouped)
             }
         }
+        .searchable(text: $searchText, prompt: "Search symptoms, triggers, notes...")
         .navigationTitle("Episodes")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Menu {
+                    Picker("Pain Level", selection: $painFilter) {
+                        ForEach(PainFilter.allCases, id: \.self) { filter in
+                            Text(filter.rawValue).tag(filter)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                        if painFilter != .all {
+                            Text(painFilter.rawValue)
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     appState.showingQuickLog = true
@@ -91,6 +144,7 @@ struct EpisodeListView: View {
         for index in offsets {
             modelContext.delete(episodes[index])
         }
+        HapticsManager.shared.error()
     }
 }
 

@@ -55,6 +55,44 @@ final class AppState {
         self.isDimMode = UserDefaults.standard.bool(forKey: "isDimMode")
     }
 
+    // MARK: - Streak Tracking
+
+    var currentStreak: Int {
+        let lastDate = UserDefaults.standard.object(forKey: "lastActiveDate") as? Date
+        let streak = UserDefaults.standard.integer(forKey: "currentStreak")
+
+        guard let lastDate else { return 0 }
+
+        if Calendar.current.isDateInToday(lastDate) {
+            return streak
+        } else if Calendar.current.isDateInYesterday(lastDate) {
+            return streak
+        } else {
+            return 0
+        }
+    }
+
+    func recordActivity() {
+        let lastDate = UserDefaults.standard.object(forKey: "lastActiveDate") as? Date
+        let streak = UserDefaults.standard.integer(forKey: "currentStreak")
+
+        let newStreak: Int
+        if let lastDate {
+            if Calendar.current.isDateInToday(lastDate) {
+                return // Already recorded today
+            } else if Calendar.current.isDateInYesterday(lastDate) {
+                newStreak = streak + 1
+            } else {
+                newStreak = 1
+            }
+        } else {
+            newStreak = 1
+        }
+
+        UserDefaults.standard.set(Date(), forKey: "lastActiveDate")
+        UserDefaults.standard.set(newStreak, forKey: "currentStreak")
+    }
+
     // MARK: - Premium Feature Gating
 
     static let freeHistoryDays: Int = 30

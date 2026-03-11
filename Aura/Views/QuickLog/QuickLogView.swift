@@ -20,7 +20,20 @@ struct QuickLogView: View {
     @State private var takenMedications: Set<UUID> = []
     @State private var notes: String = ""
     @State private var showingSaveConfirmation = false
-    @State private var isExpanded = false
+    @State private var isExpanded = UserDefaults.standard.bool(forKey: "quickLogWasExpanded")
+
+    // Smart defaults from UserDefaults
+    private static let recentSymptomsKey = "recentSymptoms"
+    private static let recentTriggersKey = "recentTriggers"
+    private static let wasExpandedKey = "quickLogWasExpanded"
+
+    private var recentSymptoms: [String] {
+        UserDefaults.standard.stringArray(forKey: Self.recentSymptomsKey) ?? []
+    }
+
+    private var recentTriggers: [String] {
+        UserDefaults.standard.stringArray(forKey: Self.recentTriggersKey) ?? []
+    }
 
     private var availableSymptoms: [String] {
         var symptoms: Set<String> = []
@@ -84,6 +97,31 @@ struct QuickLogView: View {
                         // MARK: - Optional Enrichment (below the fold)
                         if isExpanded {
                             VStack(spacing: 28) {
+                                // Recent Symptoms (smart defaults)
+                                if !recentSymptoms.isEmpty {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Recent")
+                                            .font(AuraTheme.captionFont)
+                                            .foregroundStyle(.secondary)
+
+                                        FlowLayout(spacing: 8) {
+                                            ForEach(recentSymptoms.prefix(5), id: \.self) { symptom in
+                                                PillButton(
+                                                    title: symptom,
+                                                    isSelected: selectedSymptoms.contains(symptom)
+                                                ) {
+                                                    if selectedSymptoms.contains(symptom) {
+                                                        selectedSymptoms.remove(symptom)
+                                                    } else {
+                                                        selectedSymptoms.insert(symptom)
+                                                    }
+                                                    HapticsManager.shared.selectionChanged()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // Symptoms
                                 SymptomPickerView(
                                     selectedSymptoms: $selectedSymptoms,
@@ -147,20 +185,7 @@ struct QuickLogView: View {
 
                 // MARK: - Save Confirmation Overlay
                 if showingSaveConfirmation {
-                    VStack {
-                        Spacer()
-                        Text("Logged. Feel better soon.")
-                            .font(.system(size: 18, weight: .medium, design: .rounded))
-                            .foregroundStyle(AuraTheme.primary)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 16)
-                            .background {
-                                RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                                    .fill(.regularMaterial)
-                            }
-                        Spacer()
-                    }
-                    .transition(.opacity)
+                    SaveConfirmationOverlay(reduceMotion: reduceMotion)
                 }
             }
             .navigationTitle("Log Episode")
@@ -216,6 +241,15 @@ struct QuickLogView: View {
 
         modelContext.insert(episode)
 
+        // Save smart defaults for next time
+        if !selectedSymptoms.isEmpty {
+            UserDefaults.standard.set(Array(selectedSymptoms), forKey: Self.recentSymptomsKey)
+        }
+        if !selectedTriggers.isEmpty {
+            UserDefaults.standard.set(Array(selectedTriggers), forKey: Self.recentTriggersKey)
+        }
+        UserDefaults.standard.set(isExpanded, forKey: Self.wasExpandedKey)
+
         HapticsManager.shared.saveSuccess()
 
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
@@ -266,14 +300,71 @@ struct MedicationQuickButton: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background {
-                RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
-            }
+            .auraCard()
         }
         .accessibilityLabel("\(medication.name), \(medication.dosage)")
         .accessibilityAddTraits(isTaken ? .isSelected : [])
+    }
+}
+
+// MARK: - Save Confirmation Overlay
+
+struct SaveConfirmationOverlay: View {
+    let reduceMotion: Bool
+    @State private var showCheck = false
+    @State private var showText = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .stroke(AuraTheme.accent.opacity(0.2), lineWidth: 4)
+                        .frame(width: 64, height: 64)
+
+                    Circle()
+                        .trim(from: 0, to: showCheck ? 1 : 0)
+                        .stroke(AuraTheme.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .frame(width: 64, height: 64)
+                        .rotationEffect(.degrees(-90))
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(AuraTheme.accent)
+                        .scaleEffect(showCheck ? 1 : 0.3)
+                        .opacity(showCheck ? 1 : 0)
+                }
+
+                Text("Logged. Feel better soon.")
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundStyle(AuraTheme.primary)
+                    .opacity(showText ? 1 : 0)
+                    .offset(y: showText ? 0 : 8)
+            }
+            .padding(.horizontal, 32)
+            .padding(.vertical, 24)
+            .background {
+                RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
+                    .fill(.regularMaterial)
+            }
+            .scaleEffect(showCheck ? 1 : 0.9)
+            Spacer()
+        }
+        .transition(.opacity)
+        .onAppear {
+            if reduceMotion {
+                showCheck = true
+                showText = true
+            } else {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    showCheck = true
+                }
+                withAnimation(.easeOut(duration: 0.3).delay(0.25)) {
+                    showText = true
+                }
+            }
+        }
     }
 }
 

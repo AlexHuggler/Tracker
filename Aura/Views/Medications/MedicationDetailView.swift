@@ -34,9 +34,9 @@ struct MedicationDetailView: View {
                             .padding(.vertical, 4)
                             .background {
                                 Capsule()
-                                    .fill(AuraTheme.accent.opacity(0.15))
+                                    .fill(medication.medicationType.color.opacity(0.15))
                             }
-                            .foregroundStyle(AuraTheme.accent)
+                            .foregroundStyle(medication.medicationType.color)
                     }
                     Spacer()
                 }

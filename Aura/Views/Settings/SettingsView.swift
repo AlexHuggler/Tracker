@@ -72,6 +72,12 @@ struct SettingsView: View {
             }
 
             Section("Data") {
+                NavigationLink {
+                    DataExportView()
+                } label: {
+                    Label("Export My Data", systemImage: "square.and.arrow.up")
+                }
+
                 if appState.isPremium {
                     Label("iCloud Sync", systemImage: "icloud")
                     Text("Coming in a future update.")

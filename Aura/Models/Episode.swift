@@ -7,6 +7,7 @@ final class Episode {
     var painLevel: Int
     var timestamp: Date
     var endTimestamp: Date?
+    var endPainLevel: Int?
     var notes: String?
 
     @Relationship(deleteRule: .cascade)
@@ -22,6 +23,11 @@ final class Episode {
 
     var painCategory: PainCategory {
         PainCategory.from(level: painLevel)
+    }
+
+    var painReduction: Int? {
+        guard let endPain = endPainLevel else { return nil }
+        return painLevel - endPain
     }
 
     var duration: TimeInterval? {
@@ -43,12 +49,14 @@ final class Episode {
         painLevel: Int,
         timestamp: Date = Date(),
         endTimestamp: Date? = nil,
+        endPainLevel: Int? = nil,
         notes: String? = nil
     ) {
         self.id = UUID()
         self.painLevel = min(10, max(0, painLevel))
         self.timestamp = timestamp
         self.endTimestamp = endTimestamp
+        self.endPainLevel = endPainLevel.map { min(10, max(0, $0)) }
         self.notes = notes
     }
 }

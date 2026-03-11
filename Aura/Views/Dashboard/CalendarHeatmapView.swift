@@ -3,8 +3,14 @@ import SwiftData
 
 struct CalendarHeatmapView: View {
     let episodes: [Episode]
+    var onLogDate: ((Date) -> Void)? = nil
     @State private var displayedMonth: Date = Date()
     @State private var selectedDate: Date?
+    @State private var navigationDirection: NavigationDirection = .forward
+
+    enum NavigationDirection {
+        case forward, backward
+    }
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
     private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]
@@ -45,9 +51,12 @@ struct CalendarHeatmapView: View {
             // Month navigation
             HStack {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    navigationDirection = .backward
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         displayedMonth = displayedMonth.adding(months: -1)
+                        selectedDate = nil
                     }
+                    HapticsManager.shared.lightTap()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
@@ -59,13 +68,21 @@ struct CalendarHeatmapView: View {
                 Text(displayedMonth.monthYearString)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(AuraTheme.primary)
+                    .id(displayedMonth.monthYearString)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: navigationDirection == .forward ? .trailing : .leading).combined(with: .opacity),
+                        removal: .move(edge: navigationDirection == .forward ? .leading : .trailing).combined(with: .opacity)
+                    ))
 
                 Spacer()
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    navigationDirection = .forward
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         displayedMonth = displayedMonth.adding(months: 1)
+                        selectedDate = nil
                     }
+                    HapticsManager.shared.lightTap()
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 16, weight: .semibold))
@@ -106,27 +123,42 @@ struct CalendarHeatmapView: View {
             }
 
             // Selected day detail
-            if let selectedDate,
-               let dayEpisodes = episodesForDate(selectedDate),
-               !dayEpisodes.isEmpty {
+            if let selectedDate {
+                let dayEpisodes = episodesForDate(selectedDate)
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text(selectedDate.shortDateString)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(AuraTheme.primary)
 
-                    ForEach(dayEpisodes) { episode in
-                        HStack {
-                            PainBadge(level: episode.painLevel)
-                            Text(episode.timestamp.shortTimeString)
-                                .font(AuraTheme.captionFont)
-                                .foregroundStyle(.secondary)
-                            if let symptoms = episode.symptoms, !symptoms.isEmpty {
-                                Text(symptoms.prefix(2).map(\.name).joined(separator: ", "))
+                    if let dayEpisodes, !dayEpisodes.isEmpty {
+                        ForEach(dayEpisodes) { episode in
+                            HStack {
+                                PainBadge(level: episode.painLevel)
+                                Text(episode.timestamp.shortTimeString)
                                     .font(AuraTheme.captionFont)
                                     .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                                if let symptoms = episode.symptoms, !symptoms.isEmpty {
+                                    Text(symptoms.prefix(2).map(\.name).joined(separator: ", "))
+                                        .font(AuraTheme.captionFont)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
                             }
                         }
+                    } else if let onLogDate {
+                        Button {
+                            onLogDate(selectedDate)
+                            HapticsManager.shared.lightTap()
+                        } label: {
+                            Label("Log episode for this day", systemImage: "plus.circle")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(AuraTheme.accent)
+                        }
+                    } else {
+                        Text("No episodes")
+                            .font(AuraTheme.captionFont)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding(12)
@@ -138,11 +170,7 @@ struct CalendarHeatmapView: View {
             }
         }
         .padding(AuraTheme.cardPadding)
-        .background {
-            RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
-        }
+        .auraCard()
     }
 
     private func episodesForDate(_ date: Date) -> [Episode]? {

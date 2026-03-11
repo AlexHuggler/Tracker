@@ -159,11 +159,7 @@ struct EpisodeDetailView: View {
         }
         .padding(AuraTheme.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
-        }
+        .auraCard()
         .padding(.horizontal)
     }
 }

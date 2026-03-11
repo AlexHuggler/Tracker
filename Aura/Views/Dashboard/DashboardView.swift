@@ -8,6 +8,12 @@ struct DashboardView: View {
     @Query(sort: \Episode.timestamp, order: .reverse)
     private var allEpisodes: [Episode]
 
+    @Query(filter: #Predicate<Medication> { $0.isActive && $0.medicationTypeRaw == "Acute" },
+           sort: \Medication.name)
+    private var acuteMedications: [Medication]
+
+    @State private var quickLogDate: Date?
+
     private var daysSinceLastEpisode: Int {
         guard let lastEpisode = allEpisodes.first else { return -1 }
         return lastEpisode.timestamp.daysBetween(Date())
@@ -48,6 +54,10 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // MARK: - Streak Badge
+                StreakBadgeView(streak: appState.currentStreak)
+                    .padding(.horizontal)
+
                 // MARK: - Days Since Last Episode
                 daysSinceCard
 
@@ -67,13 +77,22 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal)
 
+                // MARK: - Quick-Take Medications
+                if !acuteMedications.isEmpty {
+                    quickMedicationRow
+                        .padding(.horizontal)
+                }
+
                 // MARK: - 30-Day Stats
                 statsRow
                     .padding(.horizontal)
 
                 // MARK: - Calendar Heatmap
-                CalendarHeatmapView(episodes: allEpisodes)
-                    .padding(.horizontal)
+                CalendarHeatmapView(episodes: allEpisodes) { date in
+                    quickLogDate = date
+                    appState.showingQuickLog = true
+                }
+                .padding(.horizontal)
 
                 // MARK: - Recent Episodes
                 if !recentEpisodes.isEmpty {
@@ -87,6 +106,9 @@ struct DashboardView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Aura")
+        .onAppear {
+            appState.recordActivity()
+        }
     }
 
     // MARK: - Days Since Card
@@ -111,11 +133,7 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-        .background {
-            RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
-        }
+        .auraCard()
         .padding(.horizontal)
         .accessibilityElement(children: .combine)
     }
@@ -141,6 +159,44 @@ struct DashboardView: View {
                 subtitle: "with episodes",
                 accentColor: daysWithEpisodes > 15 ? AuraTheme.statusAlert : AuraTheme.primary
             )
+        }
+    }
+
+    // MARK: - Quick-Take Medications
+
+    private var quickMedicationRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Quick Take")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(acuteMedications) { med in
+                        Button {
+                            let dose = MedicationDose(medication: med, episode: nil)
+                            modelContext.insert(dose)
+                            HapticsManager.shared.saveSuccess()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "pill.fill")
+                                    .font(.system(size: 12))
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(med.name)
+                                        .font(.system(size: 14, weight: .semibold))
+                                    Text(med.dosage)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .foregroundStyle(AuraTheme.primary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .auraCard()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -200,11 +256,7 @@ struct EpisodeRowView: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(12)
-        .background {
-            RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: AuraTheme.cardShadow, radius: 4, y: 2)
-        }
+        .auraCard()
         .accessibilityElement(children: .combine)
     }
 }

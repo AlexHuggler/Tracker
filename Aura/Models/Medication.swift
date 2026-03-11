@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import SwiftUI
 
 enum MedicationType: String, Codable, CaseIterable, Identifiable {
     case acute = "Acute"
@@ -7,6 +8,14 @@ enum MedicationType: String, Codable, CaseIterable, Identifiable {
     case supplement = "Supplement"
 
     var id: String { rawValue }
+
+    var color: Color {
+        switch self {
+        case .acute: return AuraTheme.painSevere
+        case .preventive: return AuraTheme.accent
+        case .supplement: return AuraTheme.painMild
+        }
+    }
 }
 
 @Model
