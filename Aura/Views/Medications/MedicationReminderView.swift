@@ -5,6 +5,8 @@ struct MedicationReminderView: View {
     @State private var reminderEnabled: Bool
     @State private var reminderTime: Date
     @State private var notificationPermissionGranted = false
+    // 4.1: Confirmation feedback for snooze/skip actions
+    @State private var actionMessage: String?
 
     init(medication: Medication) {
         self.medication = medication
@@ -42,11 +44,56 @@ struct MedicationReminderView: View {
                 Text("You'll receive a daily notification to take \(medication.name).")
             }
 
+            // 4.1: Functional snooze/skip buttons
             if reminderEnabled {
                 Section("When notified") {
-                    Label("Snooze 15 minutes", systemImage: "clock.arrow.circlepath")
-                    Label("Snooze 1 hour", systemImage: "clock.arrow.circlepath")
-                    Label("Skip today", systemImage: "forward.fill")
+                    Button {
+                        Task {
+                            try? await NotificationManager.shared.snoozeReminder(for: medication, minutes: 15)
+                            HapticsManager.shared.lightTap()
+                            actionMessage = "Snoozed for 15 minutes"
+                        }
+                    } label: {
+                        Label("Snooze 15 minutes", systemImage: "clock.arrow.circlepath")
+                    }
+
+                    Button {
+                        Task {
+                            try? await NotificationManager.shared.snoozeReminder(for: medication, minutes: 60)
+                            HapticsManager.shared.lightTap()
+                            actionMessage = "Snoozed for 1 hour"
+                        }
+                    } label: {
+                        Label("Snooze 1 hour", systemImage: "clock.arrow.circlepath")
+                    }
+
+                    Button(role: .destructive) {
+                        NotificationManager.shared.skipToday(for: medication)
+                        HapticsManager.shared.lightTap()
+                        actionMessage = "Skipped today's reminder"
+                    } label: {
+                        Label("Skip today", systemImage: "forward.fill")
+                    }
+                }
+
+                // Confirmation feedback
+                if let actionMessage {
+                    Section {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(AuraTheme.accent)
+                            Text(actionMessage)
+                                .font(AuraTheme.captionFont)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation {
+                                self.actionMessage = nil
+                            }
+                        }
+                    }
                 }
             }
         }
