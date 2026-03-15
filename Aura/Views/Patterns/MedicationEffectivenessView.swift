@@ -10,7 +10,7 @@ struct MedicationEffectivenessView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text(med.medicationName)
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(.headline)
                                 .foregroundStyle(AuraTheme.primary)
                             Spacer()
                             Text("Used \(med.timesUsed)x")
@@ -28,10 +28,10 @@ struct MedicationEffectivenessView: View {
                             if let relief = med.avgReliefMinutes {
                                 VStack(spacing: 2) {
                                     Text("\(Int(relief))")
-                                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                                        .font(.system(.title2, design: .rounded, weight: .bold))
                                         .foregroundStyle(AuraTheme.accent)
                                     Text("avg minutes\nto relief")
-                                        .font(.system(size: 11))
+                                        .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .multilineTextAlignment(.center)
                                 }
@@ -42,10 +42,10 @@ struct MedicationEffectivenessView: View {
                             if let reduction = med.avgPainReduction {
                                 VStack(spacing: 2) {
                                     Text(String(format: "%.1f", reduction))
-                                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                                        .font(.system(.title2, design: .rounded, weight: .bold))
                                         .foregroundStyle(AuraTheme.painMild)
                                     Text("avg pain\nreduction")
-                                        .font(.system(size: 11))
+                                        .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .multilineTextAlignment(.center)
                                 }
@@ -55,10 +55,10 @@ struct MedicationEffectivenessView: View {
 
                             VStack(spacing: 2) {
                                 Text("\(med.timesUsed)")
-                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .font(.system(.title2, design: .rounded, weight: .bold))
                                     .foregroundStyle(AuraTheme.primary)
                                 Text("times\nused")
-                                    .font(.system(size: 11))
+                                    .font(.caption2)
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                             }
@@ -79,7 +79,7 @@ struct MedicationEffectivenessView: View {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
                     Text("Effectiveness data is based on your logged episodes. Discuss medication changes with your doctor.")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 8)

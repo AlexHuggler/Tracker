@@ -24,7 +24,7 @@ struct PainSliderView: View {
 
             // Category label
             Text(PainCategory.from(level: painLevel).rawValue)
-                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .font(.system(.headline, design: .rounded, weight: .medium))
                 .foregroundStyle(AuraTheme.painColor(for: painLevel))
                 .accessibilityHidden(true)
 

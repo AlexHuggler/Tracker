@@ -26,6 +26,14 @@ struct ReportBuilderView: View {
     @State private var isGenerating = false
     @State private var generatedPDFData: Data?
     @State private var showingPreview = false
+    @State private var errorMessage: String?
+    @State private var selectedPreset: ReportPreset = .full
+
+    enum ReportPreset: String, CaseIterable {
+        case full = "Full Report"
+        case quick = "Quick Summary"
+        case custom = "Custom"
+    }
 
     var body: some View {
         List {
@@ -38,15 +46,29 @@ struct ReportBuilderView: View {
                 DatePicker("To", selection: $endDate, displayedComponents: .date)
             }
 
-            Section("Include in Report") {
-                Toggle("Episode Summary", isOn: $includeEpisodeSummary)
-                Toggle("Calendar Heatmap", isOn: $includeCalendarHeatmap)
-                Toggle("Symptom Breakdown", isOn: $includeSymptomBreakdown)
-                Toggle("Trigger Correlations", isOn: $includeTriggerCorrelations)
-                Toggle("Medication Usage", isOn: $includeMedicationUsage)
-                Toggle("Weather Correlation", isOn: $includeWeatherCorrelation)
-                Toggle("Sleep Correlation", isOn: $includeSleepCorrelation)
-                Toggle("Full Episode Log", isOn: $includeFullLog)
+            Section("Preset") {
+                Picker("Report Preset", selection: $selectedPreset) {
+                    ForEach(ReportPreset.allCases, id: \.self) { preset in
+                        Text(preset.rawValue).tag(preset)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: selectedPreset) { _, preset in
+                    applyPreset(preset)
+                }
+            }
+
+            if selectedPreset == .custom {
+                Section("Include in Report") {
+                    Toggle("Episode Summary", isOn: $includeEpisodeSummary)
+                    Toggle("Calendar Heatmap", isOn: $includeCalendarHeatmap)
+                    Toggle("Symptom Breakdown", isOn: $includeSymptomBreakdown)
+                    Toggle("Trigger Correlations", isOn: $includeTriggerCorrelations)
+                    Toggle("Medication Usage", isOn: $includeMedicationUsage)
+                    Toggle("Weather Correlation", isOn: $includeWeatherCorrelation)
+                    Toggle("Sleep Correlation", isOn: $includeSleepCorrelation)
+                    Toggle("Full Episode Log", isOn: $includeFullLog)
+                }
             }
 
             Section {
@@ -70,7 +92,7 @@ struct ReportBuilderView: View {
                                 .padding(.trailing, 8)
                         }
                         Text(isGenerating ? "Generating..." : "Generate PDF Report")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.headline)
                             .foregroundStyle(.white)
                         Spacer()
                     }
@@ -88,10 +110,36 @@ struct ReportBuilderView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Doctor Report")
         .navigationBarTitleDisplayMode(.inline)
+        .errorAlert($errorMessage)
         .sheet(isPresented: $showingPreview) {
             if let pdfData = generatedPDFData {
                 ReportPreviewView(pdfData: pdfData, patientName: patientName)
             }
+        }
+    }
+
+    private func applyPreset(_ preset: ReportPreset) {
+        switch preset {
+        case .full:
+            includeEpisodeSummary = true
+            includeCalendarHeatmap = true
+            includeSymptomBreakdown = true
+            includeTriggerCorrelations = true
+            includeMedicationUsage = true
+            includeWeatherCorrelation = true
+            includeSleepCorrelation = true
+            includeFullLog = true
+        case .quick:
+            includeEpisodeSummary = true
+            includeCalendarHeatmap = true
+            includeSymptomBreakdown = false
+            includeTriggerCorrelations = false
+            includeMedicationUsage = true
+            includeWeatherCorrelation = false
+            includeSleepCorrelation = false
+            includeFullLog = false
+        case .custom:
+            break
         }
     }
 

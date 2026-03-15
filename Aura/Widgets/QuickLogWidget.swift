@@ -28,11 +28,11 @@ struct QuickLogWidgetView: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "plus.circle.fill")
-                .font(.system(size: 36))
+                .font(.largeTitle)
                 .foregroundStyle(Color(hex: "1ABC9C"))
 
             Text("Log Episode")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color(hex: "2C3E50"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

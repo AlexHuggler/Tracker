@@ -13,18 +13,18 @@ struct StreakBadgeView: View {
         if streak > 1 {
             HStack(spacing: 8) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 18))
+                    .font(.headline)
                     .foregroundStyle(.orange)
                     .scaleEffect(isAnimating ? 1.2 : 1.0)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text("\(streak)-day streak")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
                         .foregroundStyle(AuraTheme.primary)
 
                     if isMilestone {
                         Text("Milestone reached!")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.caption.weight(.medium))
                             .foregroundStyle(AuraTheme.accent)
                     }
                 }

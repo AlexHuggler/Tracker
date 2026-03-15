@@ -60,7 +60,7 @@ struct CalendarHeatmapView: View {
                     HapticsManager.shared.lightTap()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .frame(width: AuraTheme.minTouchTarget, height: AuraTheme.minTouchTarget)
                 }
 
@@ -72,10 +72,10 @@ struct CalendarHeatmapView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(displayedMonth.monthYearString)
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.headline)
                             .foregroundStyle(AuraTheme.primary)
                         Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -96,7 +96,7 @@ struct CalendarHeatmapView: View {
                     HapticsManager.shared.lightTap()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .frame(width: AuraTheme.minTouchTarget, height: AuraTheme.minTouchTarget)
                 }
                 .disabled(Calendar.current.isDate(displayedMonth, equalTo: Date(), toGranularity: .month))
@@ -106,7 +106,7 @@ struct CalendarHeatmapView: View {
             LazyVGrid(columns: columns, spacing: 4) {
                 ForEach(weekdayLabels, id: \.self) { label in
                     Text(label)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                         .frame(height: 20)
                 }
@@ -139,7 +139,7 @@ struct CalendarHeatmapView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(selectedDate.shortDateString)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(AuraTheme.primary)
 
                     if let dayEpisodes, !dayEpisodes.isEmpty {
@@ -163,7 +163,7 @@ struct CalendarHeatmapView: View {
                             HapticsManager.shared.lightTap()
                         } label: {
                             Label("Log episode for this day", systemImage: "plus.circle")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.footnote.weight(.medium))
                                 .foregroundStyle(AuraTheme.accent)
                         }
                     } else {
@@ -212,7 +212,7 @@ struct DayCell: View {
             }
 
             Text("\(date.dayOfMonth)")
-                .font(.system(size: 13, weight: painLevel != nil ? .semibold : .regular))
+                .font(.footnote.weight(painLevel != nil ? .semibold : .regular))
                 .foregroundStyle(painLevel != nil ? .white : .primary)
 
             if isToday {
@@ -229,6 +229,7 @@ struct DayCell: View {
         .accessibilityLabel(
             "\(date.shortDateString)\(painLevel.map { ", pain level \($0)" } ?? ", no episodes")"
         )
+        .accessibilityHint(painLevel != nil ? "Double tap to view episodes" : "Double tap to log an episode for this day")
     }
 }
 
@@ -267,7 +268,7 @@ struct PainBadge: View {
 
     var body: some View {
         Text("\(level)")
-            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .font(.system(.footnote, design: .rounded, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 28, height: 28)
             .background(Circle().fill(AuraTheme.painColor(for: level)))

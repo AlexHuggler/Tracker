@@ -24,7 +24,7 @@ struct MedicationDetailView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(medication.name)
-                            .font(.system(size: 22, weight: .bold))
+                            .font(.title2.weight(.bold))
                         Text(medication.dosage)
                             .font(AuraTheme.bodyFont)
                             .foregroundStyle(.secondary)

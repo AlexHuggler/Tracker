@@ -4,12 +4,16 @@ import SwiftData
 @main
 struct AuraApp: App {
     @State private var appState = AppState()
+    @State private var showDataError = false
 
-    var sharedModelContainer: ModelContainer = {
+    static let containerResult: (container: ModelContainer, isFallback: Bool) = {
         do {
-            return try SharedModelContainer.makeContainer()
+            return (try SharedModelContainer.makeContainer(), false)
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Fallback to in-memory container so the app can launch
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            let fallback = try! ModelContainer(for: SharedModelContainer.schema, configurations: config)
+            return (fallback, true)
         }
     }()
 
@@ -17,7 +21,17 @@ struct AuraApp: App {
         WindowGroup {
             ContentView()
                 .environment(appState)
-                .modelContainer(sharedModelContainer)
+                .modelContainer(Self.containerResult.container)
+                .alert("Data Unavailable", isPresented: $showDataError) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text("Your data could not be loaded. The app is running with temporary storage. Please restart or contact support if the issue persists.")
+                }
+                .onAppear {
+                    if Self.containerResult.isFallback {
+                        showDataError = true
+                    }
+                }
                 .preferredColorScheme(appState.isDimMode ? .dark : nil)
                 .overlay {
                     if appState.isDimMode {

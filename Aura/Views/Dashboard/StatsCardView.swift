@@ -25,13 +25,13 @@ struct StatsCardView: View {
                 .lineLimit(1)
 
             Text(hasAppeared ? value : " ")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.title3.weight(.bold))
                 .foregroundStyle(accentColor)
                 .contentTransition(.numericText(value: Double(value.filter(\.isNumber).prefix(4)) ?? 0))
 
             if let subtitle {
                 Text(subtitle)
-                    .font(.system(size: 12, weight: .regular))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -52,6 +52,7 @@ struct StatsCardView: View {
             }
         }
         .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value) \(subtitle ?? "")")
     }
 }
 

@@ -19,7 +19,7 @@ struct CustomTriggersView: View {
                         addTrigger()
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 28))
+                            .font(.title)
                             .foregroundStyle(AuraTheme.accent)
                             .frame(minWidth: 44, minHeight: 44)
                     }

@@ -13,7 +13,34 @@ struct DashboardView: View {
            sort: \Medication.name)
     private var acuteMedications: [Medication]
 
+    @Query(sort: \DailyLog.date, order: .reverse)
+    private var dailyLogs: [DailyLog]
+
     @State private var quickLogDate: Date?
+    @State private var showingDailyLog = false
+    @State private var statsPeriod: StatsPeriod = .thirtyDays
+
+    enum StatsPeriod: Int, CaseIterable {
+        case sevenDays = 7
+        case thirtyDays = 30
+        case ninetyDays = 90
+
+        var label: String {
+            switch self {
+            case .sevenDays: return "7d"
+            case .thirtyDays: return "30d"
+            case .ninetyDays: return "90d"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .sevenDays: return "this week"
+            case .thirtyDays: return "this month"
+            case .ninetyDays: return "3 months"
+            }
+        }
+    }
 
     // 2.2: Track which medication was just quick-taken for visual confirmation
     @State private var justTakenMedID: UUID?
@@ -36,13 +63,13 @@ struct DashboardView: View {
         return lastEpisode.timestamp.daysBetween(Date())
     }
 
-    private var last30DayEpisodes: [Episode] {
-        let cutoff = Date().adding(days: -30)
+    private var periodEpisodes: [Episode] {
+        let cutoff = Date().adding(days: -statsPeriod.rawValue)
         return allEpisodes.filter { $0.timestamp >= cutoff }
     }
 
     private var averagePain: Double {
-        let episodes = last30DayEpisodes
+        let episodes = periodEpisodes
         guard !episodes.isEmpty else { return 0 }
         let total = episodes.reduce(0) { $0 + $1.painLevel }
         return Double(total) / Double(episodes.count)
@@ -50,7 +77,7 @@ struct DashboardView: View {
 
     private var mostCommonSymptom: String {
         var counts: [String: Int] = [:]
-        for episode in last30DayEpisodes {
+        for episode in periodEpisodes {
             for symptom in episode.symptoms ?? [] {
                 counts[symptom.name, default: 0] += 1
             }
@@ -59,13 +86,16 @@ struct DashboardView: View {
     }
 
     private var daysWithEpisodes: Int {
-        let cutoff = Date().adding(days: -30)
-        let days = Set(last30DayEpisodes.filter { $0.timestamp >= cutoff }.map { $0.timestamp.startOfDay })
-        return days.count
+        Set(periodEpisodes.map { $0.timestamp.startOfDay }).count
     }
 
     private var recentEpisodes: [Episode] {
         Array(allEpisodes.prefix(3))
+    }
+
+    private var hasLoggedToday: Bool {
+        let today = Calendar.current.startOfDay(for: Date())
+        return dailyLogs.contains { Calendar.current.isDate($0.date, inSameDayAs: today) }
     }
 
     var body: some View {
@@ -87,7 +117,7 @@ struct DashboardView: View {
                     appState.showingQuickLog = true
                 } label: {
                     Label("Log Episode", systemImage: "plus.circle.fill")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: AuraTheme.minTouchTarget)
@@ -99,6 +129,74 @@ struct DashboardView: View {
                 .padding(.horizontal)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
+
+                // MARK: - Daily Log Card
+                if hasLoggedToday && !dailyLogs.isEmpty {
+                    NavigationLink {
+                        DailyLogHistoryView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title2)
+                                .foregroundStyle(AuraTheme.accent)
+                                .frame(width: 40)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Today logged")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(AuraTheme.primary)
+                                Text("View daily log history")
+                                    .font(AuraTheme.captionFont)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(AuraTheme.cardPadding)
+                        .auraCard()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 12)
+                } else if !hasLoggedToday {
+                    Button {
+                        showingDailyLog = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "moon.zzz")
+                                .font(.title2)
+                                .foregroundStyle(AuraTheme.accent)
+                                .frame(width: 40)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("How did you sleep?")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(AuraTheme.primary)
+                                Text("Log sleep, stress & notes to improve pattern detection")
+                                    .font(AuraTheme.captionFont)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(AuraTheme.cardPadding)
+                        .auraCard()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 12)
+                }
 
                 // MARK: - Quick-Take Medications
                 if !acuteMedications.isEmpty {
@@ -143,7 +241,7 @@ struct DashboardView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(AuraTheme.accent)
                     Text("\(medName) logged")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(AuraTheme.primary)
                     Spacer()
                     Button("Undo") {
@@ -153,7 +251,7 @@ struct DashboardView: View {
                         }
                         withAnimation { showingDoseToast = false }
                     }
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(AuraTheme.accent)
                 }
                 .padding(.horizontal, 16)
@@ -180,6 +278,9 @@ struct DashboardView: View {
             }
         }
         .background(Color(.systemGroupedBackground))
+        .sheet(isPresented: $showingDailyLog) {
+            DailyLogView()
+        }
         .navigationTitle("Aura")
         .onAppear {
             appState.recordActivity()
@@ -214,18 +315,39 @@ struct DashboardView: View {
     private var daysSinceCard: some View {
         VStack(spacing: 4) {
             if daysSinceLastEpisode < 0 {
-                Text("No episodes logged yet")
-                    .font(.system(size: 17, weight: .medium))
+                Image(systemName: "waveform.path.ecg")
+                    .font(.largeTitle)
+                    .foregroundStyle(AuraTheme.accent)
+                    .padding(.bottom, 4)
+
+                Text("Welcome to Aura")
+                    .font(AuraTheme.headingFont)
+                    .foregroundStyle(AuraTheme.primary)
+
+                Text("Log your first episode to start discovering patterns.")
+                    .font(AuraTheme.bodyFont)
                     .foregroundStyle(.secondary)
-                Text("Start tracking to see patterns")
-                    .font(AuraTheme.captionFont)
-                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    appState.showingQuickLog = true
+                } label: {
+                    Text("Log Episode")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background {
+                            Capsule().fill(AuraTheme.accent)
+                        }
+                }
+                .padding(.top, 4)
             } else {
                 Text("\(daysSinceLastEpisode)")
-                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(AuraTheme.daysSinceColor(daysSinceLastEpisode))
                 Text(daysSinceLastEpisode == 1 ? "day since last episode" : "days since last episode")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
             }
         }
@@ -234,29 +356,39 @@ struct DashboardView: View {
         .auraCard()
         .padding(.horizontal)
         .accessibilityElement(children: .combine)
+        .accessibilityValue(daysSinceLastEpisode < 0 ? "No episodes logged" : "\(daysSinceLastEpisode) days since last episode")
     }
 
     // MARK: - Stats Row
 
     private var statsRow: some View {
-        HStack(spacing: 8) {
-            StatsCardView(
-                title: "Episodes",
-                value: "\(last30DayEpisodes.count)",
-                subtitle: "this month"
-            )
-            StatsCardView(
-                title: "Avg Pain",
-                value: String(format: "%.1f", averagePain),
-                subtitle: "out of 10",
-                accentColor: AuraTheme.painColor(for: Int(averagePain.rounded()))
-            )
-            StatsCardView(
-                title: "Days",
-                value: "\(daysWithEpisodes)/30",
-                subtitle: "with episodes",
-                accentColor: daysWithEpisodes > 15 ? AuraTheme.statusAlert : AuraTheme.primary
-            )
+        VStack(spacing: 8) {
+            Picker("Period", selection: $statsPeriod) {
+                ForEach(StatsPeriod.allCases, id: \.self) { period in
+                    Text(period.label).tag(period)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            HStack(spacing: 8) {
+                StatsCardView(
+                    title: "Episodes",
+                    value: "\(periodEpisodes.count)",
+                    subtitle: statsPeriod.subtitle
+                )
+                StatsCardView(
+                    title: "Avg Pain",
+                    value: String(format: "%.1f", averagePain),
+                    subtitle: "out of 10",
+                    accentColor: AuraTheme.painColor(for: Int(averagePain.rounded()))
+                )
+                StatsCardView(
+                    title: "Days",
+                    value: "\(daysWithEpisodes)/\(statsPeriod.rawValue)",
+                    subtitle: "with episodes",
+                    accentColor: daysWithEpisodes > (statsPeriod.rawValue / 2) ? AuraTheme.statusAlert : AuraTheme.primary
+                )
+            }
         }
     }
 
@@ -266,7 +398,7 @@ struct DashboardView: View {
     private var quickMedicationRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Quick Take")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -300,18 +432,18 @@ struct DashboardView: View {
                             HStack(spacing: 6) {
                                 if justTakenMedID == med.id {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 14))
+                                        .font(.footnote)
                                         .foregroundStyle(AuraTheme.accent)
                                         .transition(.scale.combined(with: .opacity))
                                 } else {
                                     Image(systemName: "pill.fill")
-                                        .font(.system(size: 12))
+                                        .font(.caption)
                                 }
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(justTakenMedID == med.id ? "Logged!" : med.name)
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(.footnote.weight(.semibold))
                                     Text(med.dosage)
-                                        .font(.system(size: 11))
+                                        .font(.caption2)
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -320,6 +452,8 @@ struct DashboardView: View {
                             .padding(.vertical, 10)
                             .auraCard()
                         }
+                        .accessibilityLabel("\(med.name), \(med.dosage)")
+                        .accessibilityHint("Double tap to log a dose of \(med.name)")
                     }
                 }
             }
@@ -332,7 +466,7 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Recent Episodes")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(AuraTheme.primary)
                 Spacer()
                 NavigationLink("See all") {
@@ -364,7 +498,7 @@ struct EpisodeRowView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(episode.timestamp.shortDateTimeString)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(AuraTheme.primary)
 
                 if let symptoms = episode.symptoms, !symptoms.isEmpty {
@@ -378,7 +512,7 @@ struct EpisodeRowView: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
         .padding(12)
@@ -440,11 +574,11 @@ struct StreakCelebrationOverlay: View {
 
                 VStack(spacing: 12) {
                     Text("\(streak)")
-                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .foregroundStyle(AuraTheme.accent)
 
                     Text("Day Streak!")
-                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .font(.title2.weight(.semibold))
                         .foregroundStyle(AuraTheme.primary)
 
                     Text(milestoneMessage)
