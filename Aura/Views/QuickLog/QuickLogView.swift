@@ -14,7 +14,11 @@ struct QuickLogView: View {
     @Query(filter: #Predicate<ConditionProfile> { $0.isActive })
     private var activeConditions: [ConditionProfile]
 
-    @State private var painLevel: Int = 5
+    // 1.1: Smart pain level default — remembers last-used pain level
+    @State private var painLevel: Int = {
+        let stored = UserDefaults.standard.integer(forKey: "lastPainLevel")
+        return stored > 0 ? stored : 5
+    }()
     @State private var selectedSymptoms: Set<String> = []
     @State private var selectedTriggers: Set<String> = []
     @State private var takenMedications: Set<UUID> = []
@@ -22,10 +26,15 @@ struct QuickLogView: View {
     @State private var showingSaveConfirmation = false
     @State private var isExpanded = UserDefaults.standard.bool(forKey: "quickLogWasExpanded")
 
+    // 2.1: Pre-filled context from Dashboard
+    var preselectedDate: Date?
+    var preselectedMedicationIDs: Set<UUID> = []
+
     // Smart defaults from UserDefaults
     private static let recentSymptomsKey = "recentSymptoms"
     private static let recentTriggersKey = "recentTriggers"
     private static let wasExpandedKey = "quickLogWasExpanded"
+    private static let lastPainLevelKey = "lastPainLevel"
 
     private var recentSymptoms: [String] {
         UserDefaults.standard.stringArray(forKey: Self.recentSymptomsKey) ?? []
@@ -48,9 +57,26 @@ struct QuickLogView: View {
         return symptoms.sorted()
     }
 
+    // 1.2: Check if all recent symptoms are selected
+    private var allRecentSymptomsSelected: Bool {
+        let recent = Set(recentSymptoms.prefix(5))
+        return !recent.isEmpty && recent.isSubset(of: selectedSymptoms)
+    }
+
+    // 1.3: Check if all medications are taken
+    private var allMedicationsTaken: Bool {
+        !medications.isEmpty && medications.allSatisfy { takenMedications.contains($0.id) }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
+                // 3.1: Animated pain gradient background
+                AuraTheme.painColor(for: painLevel)
+                    .opacity(0.08)
+                    .ignoresSafeArea()
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.5), value: painLevel)
+
                 ScrollView {
                     VStack(spacing: 32) {
                         // MARK: - Pain Slider (above the fold)
@@ -97,15 +123,37 @@ struct QuickLogView: View {
                         // MARK: - Optional Enrichment (below the fold)
                         if isExpanded {
                             VStack(spacing: 28) {
-                                // Recent Symptoms (smart defaults)
+                                // Recent Symptoms (smart defaults) with batch select
                                 if !recentSymptoms.isEmpty {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Recent")
-                                            .font(AuraTheme.captionFont)
-                                            .foregroundStyle(.secondary)
+                                        // 1.2: "Select all recent" batch button
+                                        HStack {
+                                            Text("Recent")
+                                                .font(AuraTheme.captionFont)
+                                                .foregroundStyle(.secondary)
+
+                                            Spacer()
+
+                                            Button {
+                                                if allRecentSymptomsSelected {
+                                                    for symptom in recentSymptoms.prefix(5) {
+                                                        selectedSymptoms.remove(symptom)
+                                                    }
+                                                } else {
+                                                    for symptom in recentSymptoms.prefix(5) {
+                                                        selectedSymptoms.insert(symptom)
+                                                    }
+                                                }
+                                                HapticsManager.shared.selectionChanged()
+                                            } label: {
+                                                Text(allRecentSymptomsSelected ? "Clear recent" : "Select all recent")
+                                                    .font(.system(size: 13, weight: .medium))
+                                                    .foregroundStyle(AuraTheme.accent)
+                                            }
+                                        }
 
                                         FlowLayout(spacing: 8) {
-                                            ForEach(recentSymptoms.prefix(5), id: \.self) { symptom in
+                                            ForEach(Array(recentSymptoms.prefix(5).enumerated()), id: \.element) { index, symptom in
                                                 PillButton(
                                                     title: symptom,
                                                     isSelected: selectedSymptoms.contains(symptom)
@@ -117,6 +165,12 @@ struct QuickLogView: View {
                                                     }
                                                     HapticsManager.shared.selectionChanged()
                                                 }
+                                                // 3.5: Cascading pill entrance animation
+                                                .transition(.scale.combined(with: .opacity))
+                                                .animation(
+                                                    reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.7).delay(Double(index) * 0.03),
+                                                    value: isExpanded
+                                                )
                                             }
                                         }
                                     }
@@ -141,9 +195,29 @@ struct QuickLogView: View {
                                     Divider()
 
                                     VStack(alignment: .leading, spacing: 12) {
-                                        Text("Medications Taken")
-                                            .font(AuraTheme.headingFont)
-                                            .foregroundStyle(AuraTheme.primary)
+                                        // 1.3: "Take all" batch button
+                                        HStack {
+                                            Text("Medications Taken")
+                                                .font(AuraTheme.headingFont)
+                                                .foregroundStyle(AuraTheme.primary)
+
+                                            Spacer()
+
+                                            if medications.count >= 2 {
+                                                Button {
+                                                    if allMedicationsTaken {
+                                                        takenMedications.removeAll()
+                                                    } else {
+                                                        takenMedications = Set(medications.map(\.id))
+                                                    }
+                                                    HapticsManager.shared.selectionChanged()
+                                                } label: {
+                                                    Text(allMedicationsTaken ? "Clear all" : "Take all")
+                                                        .font(.system(size: 13, weight: .medium))
+                                                        .foregroundStyle(AuraTheme.accent)
+                                                }
+                                            }
+                                        }
 
                                         ForEach(medications) { med in
                                             MedicationQuickButton(
@@ -185,7 +259,7 @@ struct QuickLogView: View {
 
                 // MARK: - Save Confirmation Overlay
                 if showingSaveConfirmation {
-                    SaveConfirmationOverlay(reduceMotion: reduceMotion)
+                    SaveConfirmationOverlay(painLevel: painLevel, reduceMotion: reduceMotion)
                 }
             }
             .navigationTitle("Log Episode")
@@ -207,11 +281,22 @@ struct QuickLogView: View {
                     .accessibilityLabel(appState.isDimMode ? "Turn off dim mode" : "Turn on dim mode")
                 }
             }
+            .onAppear {
+                // 2.1: Pre-fill medications from Dashboard context
+                if !preselectedMedicationIDs.isEmpty {
+                    takenMedications = preselectedMedicationIDs
+                }
+            }
         }
     }
 
     private func saveEpisode() {
         let episode = Episode(painLevel: painLevel)
+
+        // 2.1: Use pre-selected date if provided
+        if let preselectedDate {
+            episode.timestamp = preselectedDate
+        }
 
         // Add symptoms
         for symptomName in selectedSymptoms {
@@ -249,6 +334,9 @@ struct QuickLogView: View {
             UserDefaults.standard.set(Array(selectedTriggers), forKey: Self.recentTriggersKey)
         }
         UserDefaults.standard.set(isExpanded, forKey: Self.wasExpandedKey)
+
+        // 1.1: Remember pain level for next time
+        UserDefaults.standard.set(painLevel, forKey: Self.lastPainLevelKey)
 
         HapticsManager.shared.saveSuccess()
 
@@ -309,10 +397,21 @@ struct MedicationQuickButton: View {
 
 // MARK: - Save Confirmation Overlay
 
+// 3.4: Pain-contextual save confirmation messages
 struct SaveConfirmationOverlay: View {
+    let painLevel: Int
     let reduceMotion: Bool
     @State private var showCheck = false
     @State private var showText = false
+
+    private var message: String {
+        switch painLevel {
+        case 0...2: return "Logged. Stay well."
+        case 3...5: return "Logged. Take it easy."
+        case 6...7: return "Logged. Take care of yourself."
+        default: return "Logged. Hang in there."
+        }
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -320,23 +419,23 @@ struct SaveConfirmationOverlay: View {
             VStack(spacing: 16) {
                 ZStack {
                     Circle()
-                        .stroke(AuraTheme.accent.opacity(0.2), lineWidth: 4)
+                        .stroke(AuraTheme.painColor(for: painLevel).opacity(0.2), lineWidth: 4)
                         .frame(width: 64, height: 64)
 
                     Circle()
                         .trim(from: 0, to: showCheck ? 1 : 0)
-                        .stroke(AuraTheme.accent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .stroke(AuraTheme.painColor(for: painLevel), style: StrokeStyle(lineWidth: 4, lineCap: .round))
                         .frame(width: 64, height: 64)
                         .rotationEffect(.degrees(-90))
 
                     Image(systemName: "checkmark")
                         .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(AuraTheme.accent)
+                        .foregroundStyle(AuraTheme.painColor(for: painLevel))
                         .scaleEffect(showCheck ? 1 : 0.3)
                         .opacity(showCheck ? 1 : 0)
                 }
 
-                Text("Logged. Feel better soon.")
+                Text(message)
                     .font(.system(size: 18, weight: .medium, design: .rounded))
                     .foregroundStyle(AuraTheme.primary)
                     .opacity(showText ? 1 : 0)

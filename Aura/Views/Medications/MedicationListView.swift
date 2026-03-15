@@ -69,6 +69,31 @@ struct MedicationListView: View {
                 .listStyle(.insetGrouped)
             }
         }
+        // 2.6: Show medication limit indicator for free tier
+        .safeAreaInset(edge: .top) {
+            if !appState.isPremium && !medications.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "pill")
+                        .font(.system(size: 12))
+                    Text("\(medications.count)/\(AppState.freeMedicationLimit) medications")
+                        .font(.system(size: 13, weight: .medium))
+                    Spacer()
+                    if !canAddMore {
+                        Button {
+                            appState.showingPaywall = true
+                        } label: {
+                            Text("Unlock more")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(AuraTheme.accent)
+                        }
+                    }
+                }
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.bar)
+            }
+        }
         .navigationTitle("Medications")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

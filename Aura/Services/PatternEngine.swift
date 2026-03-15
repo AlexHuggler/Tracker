@@ -76,6 +76,42 @@ actor PatternEngine {
     static let minimumCorrelation = 0.60
     static let preliminaryCorrelation = 0.50
 
+    // 3.7: Cache analysis results to avoid re-computing on every view appear
+    struct CachedResults {
+        let episodeCount: Int
+        let triggerCorrelations: [TriggerCorrelation]
+        let temporalPatterns: [TemporalPattern]
+        let weatherPatterns: [WeatherPattern]
+        let medicationEffectiveness: [MedicationEffectiveness]
+    }
+
+    private var cache: CachedResults?
+
+    var cachedTriggerCorrelations: [TriggerCorrelation]? { cache?.triggerCorrelations }
+    var cachedTemporalPatterns: [TemporalPattern]? { cache?.temporalPatterns }
+    var cachedWeatherPatterns: [WeatherPattern]? { cache?.weatherPatterns }
+    var cachedMedicationEffectiveness: [MedicationEffectiveness]? { cache?.medicationEffectiveness }
+
+    func isCacheValid(episodeCount: Int) -> Bool {
+        cache?.episodeCount == episodeCount
+    }
+
+    func cacheResults(
+        episodeCount: Int,
+        triggers: [TriggerCorrelation],
+        temporal: [TemporalPattern],
+        weather: [WeatherPattern],
+        medication: [MedicationEffectiveness]
+    ) {
+        cache = CachedResults(
+            episodeCount: episodeCount,
+            triggerCorrelations: triggers,
+            temporalPatterns: temporal,
+            weatherPatterns: weather,
+            medicationEffectiveness: medication
+        )
+    }
+
     // MARK: - Trigger Correlations
 
     func analyzeTriggerCorrelations(episodes: [Episode]) -> [TriggerCorrelation] {

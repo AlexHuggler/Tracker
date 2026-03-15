@@ -44,12 +44,71 @@ struct PatternView: View {
         )
     }
 
+    // 1.4: Pattern progress indicator with visual progress ring
     private var insufficientData: some View {
-        ContentUnavailableView {
-            Label("Not Enough Data", systemImage: "chart.bar.doc.horizontal")
-        } description: {
-            Text("Log at least \(PatternEngine.preliminaryEpisodes) episodes to start seeing patterns. You have \(episodes.count) so far.")
+        VStack(spacing: 24) {
+            Spacer()
+
+            // Progress ring
+            ZStack {
+                Circle()
+                    .stroke(AuraTheme.accent.opacity(0.15), lineWidth: 8)
+                    .frame(width: 100, height: 100)
+
+                Circle()
+                    .trim(from: 0, to: CGFloat(episodes.count) / CGFloat(PatternEngine.minimumEpisodes))
+                    .stroke(AuraTheme.accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .frame(width: 100, height: 100)
+                    .rotationEffect(.degrees(-90))
+
+                VStack(spacing: 2) {
+                    Text("\(episodes.count)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(AuraTheme.accent)
+                    Text("of \(PatternEngine.minimumEpisodes)")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            VStack(spacing: 8) {
+                Text("Building Your Patterns")
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AuraTheme.primary)
+
+                let remaining = PatternEngine.preliminaryEpisodes - episodes.count
+                if remaining > 0 {
+                    Text("Log \(remaining) more episode\(remaining == 1 ? "" : "s") to start seeing early patterns.")
+                        .font(AuraTheme.bodyFont)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                } else {
+                    let fullRemaining = PatternEngine.minimumEpisodes - episodes.count
+                    Text("Early patterns unlocked! Log \(fullRemaining) more for full analysis.")
+                        .font(AuraTheme.bodyFont)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+
+            Button {
+                appState.showingQuickLog = true
+            } label: {
+                Label("Log Episode", systemImage: "plus.circle.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background {
+                        Capsule()
+                            .fill(AuraTheme.accent)
+                    }
+            }
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
     }
 
     private var patternsList: some View {
@@ -188,14 +247,37 @@ struct PatternView: View {
 
     @MainActor
     private func runAnalysis() async {
+        // 3.7: Use cached results if episode count hasn't changed
+        if await engine.isCacheValid(episodeCount: episodes.count) {
+            triggerCorrelations = await engine.cachedTriggerCorrelations ?? []
+            temporalPatterns = await engine.cachedTemporalPatterns ?? []
+            weatherPatterns = await engine.cachedWeatherPatterns ?? []
+            medicationEffectiveness = await engine.cachedMedicationEffectiveness ?? []
+            return
+        }
+
         isAnalyzing = true
         defer { isAnalyzing = false }
 
-        triggerCorrelations = await engine.analyzeTriggerCorrelations(episodes: episodes)
-        temporalPatterns = await engine.analyzeTemporalPatterns(episodes: episodes)
-        weatherPatterns = await engine.analyzeWeatherCorrelation(episodes: episodes, dailyLogs: dailyLogs)
-        medicationEffectiveness = await engine.analyzeMedicationEffectiveness(
+        let triggers = await engine.analyzeTriggerCorrelations(episodes: episodes)
+        let temporal = await engine.analyzeTemporalPatterns(episodes: episodes)
+        let weather = await engine.analyzeWeatherCorrelation(episodes: episodes, dailyLogs: dailyLogs)
+        let medication = await engine.analyzeMedicationEffectiveness(
             medications: medications, episodes: episodes
+        )
+
+        triggerCorrelations = triggers
+        temporalPatterns = temporal
+        weatherPatterns = weather
+        medicationEffectiveness = medication
+
+        // Cache the results
+        await engine.cacheResults(
+            episodeCount: episodes.count,
+            triggers: triggers,
+            temporal: temporal,
+            weather: weather,
+            medication: medication
         )
     }
 }

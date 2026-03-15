@@ -75,7 +75,8 @@ struct PainSliderView: View {
                                     let newLevel = Int(round(clamped * 10))
                                     if newLevel != painLevel {
                                         painLevel = newLevel
-                                        HapticsManager.shared.sliderTick()
+                                        // 3.6: Graduated haptics based on pain level
+                                        HapticsManager.shared.painLevelTick(level: newLevel)
                                     }
                                 }
                         )
@@ -107,10 +108,10 @@ struct PainSliderView: View {
             switch direction {
             case .increment:
                 painLevel = min(10, painLevel + 1)
-                HapticsManager.shared.sliderTick()
+                HapticsManager.shared.painLevelTick(level: painLevel)
             case .decrement:
                 painLevel = max(0, painLevel - 1)
-                HapticsManager.shared.sliderTick()
+                HapticsManager.shared.painLevelTick(level: painLevel)
             @unknown default:
                 break
             }

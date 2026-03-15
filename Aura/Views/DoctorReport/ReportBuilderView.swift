@@ -11,7 +11,8 @@ struct ReportBuilderView: View {
     @Query private var medications: [Medication]
     @Query private var dailyLogs: [DailyLog]
 
-    @State private var patientName: String = ""
+    // 1.5: Pre-fill patient name from UserDefaults
+    @State private var patientName: String = UserDefaults.standard.string(forKey: "reportPatientName") ?? ""
     @State private var startDate: Date = Calendar.current.date(byAdding: .month, value: -3, to: Date()) ?? Date()
     @State private var endDate: Date = Date()
     @State private var includeEpisodeSummary = true
@@ -143,6 +144,8 @@ struct ReportBuilderView: View {
                 generatedPDFData = data
                 isGenerating = false
                 showingPreview = true
+                // 1.5: Remember patient name for next time
+                UserDefaults.standard.set(patientName, forKey: "reportPatientName")
                 HapticsManager.shared.saveSuccess()
             }
         }

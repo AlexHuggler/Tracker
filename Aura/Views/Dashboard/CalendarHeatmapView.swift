@@ -7,6 +7,7 @@ struct CalendarHeatmapView: View {
     @State private var displayedMonth: Date = Date()
     @State private var selectedDate: Date?
     @State private var navigationDirection: NavigationDirection = .forward
+    @State private var showingMonthPicker = false
 
     enum NavigationDirection {
         case forward, backward
@@ -65,14 +66,24 @@ struct CalendarHeatmapView: View {
 
                 Spacer()
 
-                Text(displayedMonth.monthYearString)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(AuraTheme.primary)
-                    .id(displayedMonth.monthYearString)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: navigationDirection == .forward ? .trailing : .leading).combined(with: .opacity),
-                        removal: .move(edge: navigationDirection == .forward ? .leading : .trailing).combined(with: .opacity)
-                    ))
+                // 2.3: Tappable month label opens month picker
+                Button {
+                    showingMonthPicker.toggle()
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(displayedMonth.monthYearString)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(AuraTheme.primary)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .id(displayedMonth.monthYearString)
+                .transition(.asymmetric(
+                    insertion: .move(edge: navigationDirection == .forward ? .trailing : .leading).combined(with: .opacity),
+                    removal: .move(edge: navigationDirection == .forward ? .leading : .trailing).combined(with: .opacity)
+                ))
 
                 Spacer()
 
@@ -171,6 +182,11 @@ struct CalendarHeatmapView: View {
         }
         .padding(AuraTheme.cardPadding)
         .auraCard()
+        // 2.3: Month picker overlay
+        .sheet(isPresented: $showingMonthPicker) {
+            MonthPickerView(selectedMonth: $displayedMonth)
+                .presentationDetents([.height(300)])
+        }
     }
 
     private func episodesForDate(_ date: Date) -> [Episode]? {
@@ -213,6 +229,36 @@ struct DayCell: View {
         .accessibilityLabel(
             "\(date.shortDateString)\(painLevel.map { ", pain level \($0)" } ?? ", no episodes")"
         )
+    }
+}
+
+// 2.3: Month picker for direct month navigation
+struct MonthPickerView: View {
+    @Binding var selectedMonth: Date
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DatePicker(
+                "Select Month",
+                selection: $selectedMonth,
+                in: ...Date(),
+                displayedComponents: [.date]
+            )
+            .datePickerStyle(.wheel)
+            .labelsHidden()
+            .padding()
+            .navigationTitle("Jump to Month")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
     }
 }
 

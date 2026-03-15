@@ -38,7 +38,11 @@ struct ContentView: View {
         if appState.hasCompletedOnboarding {
             MainTabView()
                 .sheet(isPresented: Bindable(appState).showingQuickLog) {
-                    QuickLogView()
+                    // 2.1: Pass pre-filled context (date, medications) to QuickLogView
+                    QuickLogView(
+                        preselectedDate: appState.quickLogDate,
+                        preselectedMedicationIDs: appState.quickLogMedicationIDs
+                    )
                 }
                 .sheet(isPresented: Bindable(appState).showingPaywall) {
                     PaywallView()
