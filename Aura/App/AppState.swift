@@ -15,9 +15,21 @@ final class AppState {
         didSet { UserDefaults.standard.set(isDimMode, forKey: "isDimMode") }
     }
 
-    var showingQuickLog: Bool = false
+    var showingQuickLog: Bool = false {
+        didSet {
+            // Clear pre-filled context when QuickLog is dismissed
+            if !showingQuickLog {
+                quickLogDate = nil
+                quickLogMedicationIDs = []
+            }
+        }
+    }
     var showingPaywall: Bool = false
     var selectedTab: AppTab = .dashboard
+
+    // 2.1: Pre-filled context for QuickLogView
+    var quickLogDate: Date?
+    var quickLogMedicationIDs: Set<UUID> = []
 
     enum AppTab: Int, CaseIterable, Identifiable {
         case dashboard = 0

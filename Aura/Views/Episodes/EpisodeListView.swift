@@ -110,6 +110,29 @@ struct EpisodeListView: View {
                 .listStyle(.insetGrouped)
             }
         }
+        // 2.6: Show free tier limit banner
+        .safeAreaInset(edge: .top) {
+            if !appState.isPremium && !allEpisodes.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 12))
+                    Text("Showing last \(AppState.freeHistoryDays) days")
+                        .font(.system(size: 13, weight: .medium))
+                    Spacer()
+                    Button {
+                        appState.showingPaywall = true
+                    } label: {
+                        Text("Unlock all")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(AuraTheme.accent)
+                    }
+                }
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.bar)
+            }
+        }
         .searchable(text: $searchText, prompt: "Search symptoms, triggers, notes...")
         .navigationTitle("Episodes")
         .toolbar {
