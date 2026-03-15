@@ -45,7 +45,7 @@ struct EpisodeDetailView: View {
                             .foregroundStyle(AuraTheme.painColor(for: episode.painLevel))
 
                         Text(episode.painCategory.rawValue)
-                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                            .font(.system(.headline, design: .rounded, weight: .medium))
                             .foregroundStyle(AuraTheme.painColor(for: episode.painLevel))
 
                         Text(episode.timestamp.shortDateTimeString)
@@ -126,7 +126,7 @@ struct EpisodeDetailView: View {
                             ForEach(doses) { dose in
                                 HStack {
                                     Text(dose.medication?.name ?? "Unknown")
-                                        .font(.system(size: 15, weight: .medium))
+                                        .font(.subheadline.weight(.medium))
                                     if let dosage = dose.dosage {
                                         Text(dosage)
                                             .font(AuraTheme.captionFont)
@@ -255,7 +255,7 @@ struct EpisodeDetailView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label(title, systemImage: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.headline)
                 .foregroundStyle(AuraTheme.primary)
 
             content()

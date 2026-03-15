@@ -27,11 +27,11 @@ enum AuraTheme {
 
     // MARK: - Typography
 
-    static let painLevelFont = Font.system(size: 48, weight: .bold, design: .rounded)
-    static let headingFont = Font.system(size: 22, weight: .semibold, design: .default)
-    static let bodyFont = Font.system(size: 16, weight: .regular, design: .default)
-    static let captionFont = Font.system(size: 14, weight: .regular, design: .default)
-    static let pillFont = Font.system(size: 16, weight: .medium, design: .default)
+    static let painLevelFont = Font.system(.largeTitle, design: .rounded, weight: .bold)
+    static let headingFont = Font.title3.weight(.semibold)
+    static let bodyFont = Font.body
+    static let captionFont = Font.caption
+    static let pillFont = Font.body.weight(.medium)
 
     // MARK: - Layout
 

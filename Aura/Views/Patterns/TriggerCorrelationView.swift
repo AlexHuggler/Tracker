@@ -28,11 +28,11 @@ struct TriggerCorrelationView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text(correlation.triggerName)
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundStyle(AuraTheme.primary)
                                 Spacer()
                                 Text("\(String(format: "%.0f", correlation.percentage))%")
-                                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                                    .font(.subheadline.weight(.bold))
                                     .foregroundStyle(AuraTheme.painColor(for: Int(correlation.frequency * 10)))
                             }
 
@@ -52,9 +52,9 @@ struct TriggerCorrelationView: View {
                             // Confidence badge
                             HStack(spacing: 4) {
                                 Image(systemName: correlation.confidence.icon)
-                                    .font(.system(size: 11))
+                                    .font(.caption2)
                                 Text(correlation.confidence.rawValue)
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.caption.weight(.medium))
                             }
                             .foregroundStyle(.secondary)
 
@@ -74,6 +74,9 @@ struct TriggerCorrelationView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("\(correlation.triggerName), \(String(format: "%.0f", correlation.percentage)) percent")
+                    .accessibilityValue("\(correlation.episodesWithTrigger) of \(correlation.totalEpisodes) episodes")
+                    .accessibilityHint("Double tap to \(selectedCorrelation?.id == correlation.id ? "collapse" : "expand") details")
                 }
 
                 // Disclaimer
@@ -81,7 +84,7 @@ struct TriggerCorrelationView: View {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
                     Text("Frequency is not causation. Discuss patterns with your doctor.")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 8)

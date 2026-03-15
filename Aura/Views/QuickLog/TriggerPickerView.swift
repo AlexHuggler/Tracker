@@ -39,7 +39,7 @@ struct TriggerPickerView: View {
 
             // 1.6: Explain "I don't know" mutual exclusion behavior
             Text("Tip: selecting \"I don't know\" clears other triggers, and vice versa.")
-                .font(.system(size: 12))
+                .font(.caption)
                 .foregroundStyle(.tertiary)
                 .padding(.top, 2)
         }

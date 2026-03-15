@@ -92,7 +92,7 @@ struct QuickLogView: View {
                         // MARK: - Pain Slider (above the fold)
                         VStack(spacing: 8) {
                             Text("How bad is it?")
-                                .font(.system(size: 20, weight: .medium, design: .rounded))
+                                .font(.title3.weight(.medium))
                                 .foregroundStyle(AuraTheme.primary)
 
                             PainSliderView(painLevel: $painLevel, isDimMode: appState.isDimMode)
@@ -104,7 +104,7 @@ struct QuickLogView: View {
                             saveEpisode()
                         } label: {
                             Text("Save")
-                                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                .font(.title3.weight(.semibold))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: AuraTheme.minTouchTarget)
@@ -129,6 +129,7 @@ struct QuickLogView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        .accessibilityHint("Double tap to \(isExpanded ? "hide" : "show") symptoms, triggers, medications, and notes")
 
                         // MARK: - Optional Enrichment (below the fold)
                         if isExpanded {
@@ -157,7 +158,7 @@ struct QuickLogView: View {
                                                 HapticsManager.shared.selectionChanged()
                                             } label: {
                                                 Text(allRecentSymptomsSelected ? "Clear recent" : "Select all recent")
-                                                    .font(.system(size: 13, weight: .medium))
+                                                    .font(.footnote.weight(.medium))
                                                     .foregroundStyle(AuraTheme.accent)
                                             }
                                         }
@@ -221,7 +222,7 @@ struct QuickLogView: View {
                                                 HapticsManager.shared.selectionChanged()
                                             } label: {
                                                 Text(allRecentTriggersSelected ? "Clear recent" : "Select all recent")
-                                                    .font(.system(size: 13, weight: .medium))
+                                                    .font(.footnote.weight(.medium))
                                                     .foregroundStyle(AuraTheme.accent)
                                             }
                                         }
@@ -282,7 +283,7 @@ struct QuickLogView: View {
                                                     HapticsManager.shared.selectionChanged()
                                                 } label: {
                                                     Text(allMedicationsTaken ? "Clear all" : "Take all")
-                                                        .font(.system(size: 13, weight: .medium))
+                                                        .font(.footnote.weight(.medium))
                                                         .foregroundStyle(AuraTheme.accent)
                                                 }
                                             }
@@ -325,7 +326,7 @@ struct QuickLogView: View {
                                             }
                                         } label: {
                                             Image(systemName: "mic.fill")
-                                                .font(.system(size: 14))
+                                                .font(.footnote)
                                                 .foregroundStyle(AuraTheme.accent)
                                                 .frame(width: 32, height: 32)
                                         }
@@ -340,7 +341,7 @@ struct QuickLogView: View {
 
                                     if showingVoiceHint {
                                         Text("Tap the microphone on your keyboard to dictate.")
-                                            .font(.system(size: 12))
+                                            .font(.caption)
                                             .foregroundStyle(.secondary)
                                             .transition(.opacity)
                                     }
@@ -459,7 +460,7 @@ struct MedicationQuickButton: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(medication.name)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.body.weight(.medium))
                         .foregroundStyle(AuraTheme.primary)
                     Text(medication.dosage)
                         .font(AuraTheme.captionFont)
@@ -469,7 +470,7 @@ struct MedicationQuickButton: View {
                 Spacer()
 
                 Text(isTaken ? "Taken" : "Take")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isTaken ? .white : AuraTheme.accent)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
@@ -526,14 +527,14 @@ struct SaveConfirmationOverlay: View {
                         .rotationEffect(.degrees(-90))
 
                     Image(systemName: "checkmark")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.title2.weight(.bold))
                         .foregroundStyle(AuraTheme.painColor(for: painLevel))
                         .scaleEffect(showCheck ? 1 : 0.3)
                         .opacity(showCheck ? 1 : 0)
                 }
 
                 Text(message)
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .font(.headline.weight(.medium))
                     .foregroundStyle(AuraTheme.primary)
                     .opacity(showText ? 1 : 0)
                     .offset(y: showText ? 0 : 8)

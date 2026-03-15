@@ -67,6 +67,10 @@ struct MedicationListView: View {
                     }
                 }
                 .listStyle(.insetGrouped)
+                .refreshable {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    HapticsManager.shared.lightTap()
+                }
             }
         }
         // 2.6: Show medication limit indicator for free tier
@@ -74,16 +78,16 @@ struct MedicationListView: View {
             if !appState.isPremium && !medications.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "pill")
-                        .font(.system(size: 12))
+                        .font(.caption)
                     Text("\(medications.count)/\(AppState.freeMedicationLimit) medications")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.footnote.weight(.medium))
                     Spacer()
                     if !canAddMore {
                         Button {
                             appState.showingPaywall = true
                         } label: {
                             Text("Unlock more")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.footnote.weight(.semibold))
                                 .foregroundStyle(AuraTheme.accent)
                         }
                     }
@@ -138,7 +142,7 @@ struct MedicationRowView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(medication.name)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.body.weight(.medium))
                 Text(medication.dosage)
                     .font(AuraTheme.captionFont)
                     .foregroundStyle(.secondary)
@@ -147,7 +151,7 @@ struct MedicationRowView: View {
             Spacer()
 
             Text(medication.medicationType.rawValue)
-                .font(.system(size: 12, weight: .medium))
+                .font(.caption.weight(.medium))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background {
@@ -169,12 +173,19 @@ struct AddMedicationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    @Query(sort: \Medication.name) private var existingMedications: [Medication]
+
     @State private var name = ""
+    @State private var hasInteracted = false
     @State private var dosage = ""
     @State private var medicationType: MedicationType = .acute
     @State private var frequency = ""
     @State private var maxDosesPerDay: Int?
     @State private var showingPresets = true
+
+    private var isDuplicate: Bool {
+        !name.isEmpty && existingMedications.contains { $0.name.lowercased() == name.lowercased() }
+    }
 
     var body: some View {
         NavigationStack {
@@ -191,7 +202,7 @@ struct AddMedicationView: View {
                                 HStack {
                                     VStack(alignment: .leading) {
                                         Text(preset.name)
-                                            .font(.system(size: 16, weight: .medium))
+                                            .font(.body.weight(.medium))
                                             .foregroundStyle(.primary)
                                         Text("\(preset.dosage) · \(preset.type.rawValue)")
                                             .font(AuraTheme.captionFont)
@@ -213,6 +224,17 @@ struct AddMedicationView: View {
                 } else {
                     Section("Medication Details") {
                         TextField("Name", text: $name)
+                            .onChange(of: name) { hasInteracted = true }
+                        if hasInteracted && name.isEmpty {
+                            Text("Name is required")
+                                .font(AuraTheme.captionFont)
+                                .foregroundStyle(AuraTheme.statusAlert)
+                        }
+                        if isDuplicate {
+                            Text("A medication with this name already exists")
+                                .font(AuraTheme.captionFont)
+                                .foregroundStyle(AuraTheme.statusAlert)
+                        }
                         TextField("Dosage (e.g. 50mg)", text: $dosage)
                         Picker("Type", selection: $medicationType) {
                             ForEach(MedicationType.allCases) { type in
@@ -252,7 +274,7 @@ struct AddMedicationView: View {
                         Button("Save") {
                             saveMedication()
                         }
-                        .disabled(name.isEmpty || dosage.isEmpty)
+                        .disabled(name.isEmpty || dosage.isEmpty || isDuplicate)
                         .fontWeight(.semibold)
                     }
                 }

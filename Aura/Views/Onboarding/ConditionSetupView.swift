@@ -11,7 +11,7 @@ struct ConditionSetupView: View {
             Spacer()
 
             Image(systemName: "heart.text.clipboard")
-                .font(.system(size: 48))
+                .font(.largeTitle)
                 .foregroundStyle(AuraTheme.accent)
 
             Text("What do you track?")
@@ -49,7 +49,7 @@ struct ConditionSetupView: View {
                 onContinue()
             } label: {
                 Text(selectedConditions.isEmpty ? "Skip" : "Continue")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: AuraTheme.minTouchTarget)
@@ -80,11 +80,11 @@ struct ConditionCard: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: condition.icon)
-                    .font(.system(size: 28))
+                    .font(.title)
                     .foregroundStyle(isSelected ? .white : AuraTheme.accent)
 
                 Text(condition.rawValue)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(isSelected ? .white : AuraTheme.primary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)

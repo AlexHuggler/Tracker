@@ -8,6 +8,7 @@ struct DataExportView: View {
     @State private var exportedCSV: Data?
     @State private var exportedJSON: Data?
     @State private var isExporting = false
+    @State private var errorMessage: String?
 
     private let exportService = DataExportService()
 
@@ -59,33 +60,38 @@ struct DataExportView: View {
 
             Section {
                 Text("Your data stays on your device. Export creates a local file for you to share or save.")
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Export Data")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            if isExporting {
-                ProgressView("Exporting...")
-                    .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            }
-        }
+        .loadingOverlay(isExporting, message: "Exporting...")
+        .errorAlert($errorMessage)
     }
 
     private func exportCSV() async {
         isExporting = true
-        exportedCSV = await exportService.exportEpisodes(episodes, format: .csv)
+        let data = await exportService.exportEpisodes(episodes, format: .csv)
         isExporting = false
-        HapticsManager.shared.saveSuccess()
+        if let data {
+            exportedCSV = data
+            HapticsManager.shared.saveSuccess()
+        } else {
+            errorMessage = "Failed to export CSV. Please try again."
+        }
     }
 
     private func exportJSON() async {
         isExporting = true
-        exportedJSON = await exportService.exportEpisodes(episodes, format: .json)
+        let data = await exportService.exportEpisodes(episodes, format: .json)
         isExporting = false
-        HapticsManager.shared.saveSuccess()
+        if let data {
+            exportedJSON = data
+            HapticsManager.shared.saveSuccess()
+        } else {
+            errorMessage = "Failed to export JSON. Please try again."
+        }
     }
 }

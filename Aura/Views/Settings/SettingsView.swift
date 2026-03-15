@@ -32,7 +32,7 @@ struct SettingsView: View {
                 }
 
                 Text("Reduces screen brightness for mid-episode logging when light is painful.")
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 
@@ -45,7 +45,7 @@ struct SettingsView: View {
                         if !appState.isPremium {
                             Spacer()
                             Image(systemName: "lock.fill")
-                                .font(.system(size: 12))
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -81,7 +81,7 @@ struct SettingsView: View {
                 if appState.isPremium {
                     Label("iCloud Sync", systemImage: "icloud")
                     Text("Coming in a future update.")
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -102,7 +102,7 @@ struct SettingsView: View {
                 }
 
                 Text("Aura does not collect any data. Your health information stays on your device. No accounts, no analytics, no tracking.")
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }

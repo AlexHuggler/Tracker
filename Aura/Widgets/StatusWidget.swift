@@ -81,11 +81,11 @@ struct StatusWidgetView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(entry.daysSinceLastEpisode)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .foregroundStyle(daysSinceColor)
 
                     Text(entry.daysSinceLastEpisode == 1 ? "day since\nlast episode" : "days since\nlast episode")
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
@@ -94,7 +94,7 @@ struct StatusWidgetView: View {
 
                 Link(destination: URL(string: "aura://quicklog")!) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 28))
+                        .font(.title)
                         .foregroundStyle(Color(hex: "1ABC9C"))
                 }
             }
@@ -110,11 +110,11 @@ struct StatusWidgetView: View {
 
             HStack {
                 Text("7 days ago")
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Spacer()
                 Text("Today")
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
         }

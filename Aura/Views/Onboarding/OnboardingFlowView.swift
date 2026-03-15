@@ -35,15 +35,15 @@ struct WelcomePage: View {
             Spacer()
 
             Image(systemName: "brain.head.profile")
-                .font(.system(size: 72))
+                .font(.largeTitle)
                 .foregroundStyle(AuraTheme.accent)
 
             Text("Aura")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 .foregroundStyle(AuraTheme.primary)
 
             Text("Track pain. Find patterns.\nTake control.")
-                .font(.system(size: 18, weight: .medium))
+                .font(.body.weight(.medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -61,7 +61,7 @@ struct WelcomePage: View {
 
             Button(action: onContinue) {
                 Text("Get Started")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: AuraTheme.minTouchTarget)
@@ -78,7 +78,7 @@ struct WelcomePage: View {
     private func featureRow(icon: String, text: String) -> some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.title3)
                 .foregroundStyle(AuraTheme.accent)
                 .frame(width: 30)
 
@@ -103,7 +103,7 @@ struct PermissionsPage: View {
             Spacer()
 
             Image(systemName: "hand.raised.fill")
-                .font(.system(size: 48))
+                .font(.largeTitle)
                 .foregroundStyle(AuraTheme.accent)
 
             Text("Permissions")
@@ -147,7 +147,7 @@ struct PermissionsPage: View {
 
             Button(action: onContinue) {
                 Text("Continue")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: AuraTheme.minTouchTarget)
@@ -175,16 +175,16 @@ struct PermissionsPage: View {
         Button(action: { if !isGranted { action() } }) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.title2)
                     .foregroundStyle(isGranted ? AuraTheme.painMild : AuraTheme.accent)
                     .frame(width: 40)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.headline)
                         .foregroundStyle(AuraTheme.primary)
                     Text(description)
-                        .font(.system(size: 13))
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                 }
@@ -192,7 +192,7 @@ struct PermissionsPage: View {
                 Spacer()
 
                 Image(systemName: isGranted ? "checkmark.circle.fill" : "plus.circle")
-                    .font(.system(size: 22))
+                    .font(.title2)
                     .foregroundStyle(isGranted ? AuraTheme.painMild : AuraTheme.accent)
             }
             .padding(16)
@@ -216,15 +216,15 @@ struct ReadyPage: View {
             Spacer()
 
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 72))
+                .font(.largeTitle)
                 .foregroundStyle(AuraTheme.accent)
 
             Text("You're all set!")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.system(.title, design: .rounded, weight: .bold))
                 .foregroundStyle(AuraTheme.primary)
 
             Text("Start logging when you need to.\nPatterns will emerge over time.")
-                .font(.system(size: 17, weight: .medium))
+                .font(.body.weight(.medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -232,7 +232,7 @@ struct ReadyPage: View {
 
             Button(action: onStart) {
                 Text("Start Using Aura")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: AuraTheme.minTouchTarget)

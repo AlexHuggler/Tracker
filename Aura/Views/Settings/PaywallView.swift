@@ -17,15 +17,15 @@ struct PaywallView: View {
                     // Header
                     VStack(spacing: 12) {
                         Image(systemName: "star.circle.fill")
-                            .font(.system(size: 64))
+                            .font(.largeTitle)
                             .foregroundStyle(AuraTheme.accent)
 
                         Text("Unlock Aura Premium")
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .font(.system(.title2, design: .rounded, weight: .bold))
                             .foregroundStyle(AuraTheme.primary)
 
                         Text("One-time purchase. No subscription.")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.body.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 20)
@@ -46,7 +46,7 @@ struct PaywallView: View {
                     // Price
                     VStack(spacing: 8) {
                         Text(product?.displayPrice ?? "$7.99")
-                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
                             .foregroundStyle(AuraTheme.accent)
                         Text("one-time purchase")
                             .font(AuraTheme.captionFont)
@@ -73,7 +73,7 @@ struct PaywallView: View {
                                     .padding(.trailing, 4)
                             }
                             Text(isPurchasing ? "Processing..." : "Unlock Premium — \(product?.displayPrice ?? "$7.99")")
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(.headline)
                                 .foregroundStyle(.white)
                         }
                         .frame(maxWidth: .infinity)
@@ -95,7 +95,7 @@ struct PaywallView: View {
 
                     // Privacy note
                     Text("Your data always stays on your device. Premium just unlocks features — it doesn't change how your data is stored.")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
@@ -121,16 +121,16 @@ struct PaywallView: View {
     private func premiumFeature(icon: String, title: String, description: String) -> some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.system(size: 22))
+                .font(.title2)
                 .foregroundStyle(AuraTheme.accent)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(AuraTheme.primary)
                 Text(description)
-                    .font(.system(size: 14))
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }

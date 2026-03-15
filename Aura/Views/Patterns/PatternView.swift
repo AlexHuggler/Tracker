@@ -63,17 +63,17 @@ struct PatternView: View {
 
                 VStack(spacing: 2) {
                     Text("\(episodes.count)")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.title2.weight(.bold))
                         .foregroundStyle(AuraTheme.accent)
                     Text("of \(PatternEngine.minimumEpisodes)")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
 
             VStack(spacing: 8) {
                 Text("Building Your Patterns")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(AuraTheme.primary)
 
                 let remaining = PatternEngine.preliminaryEpisodes - episodes.count
@@ -95,7 +95,7 @@ struct PatternView: View {
                 appState.showingQuickLog = true
             } label: {
                 Label("Log Episode", systemImage: "plus.circle.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 14)
@@ -129,6 +129,21 @@ struct PatternView: View {
                         .fill(AuraTheme.accent.opacity(0.08))
                 }
                 .padding(.horizontal)
+
+                // Yearly heatmap (premium)
+                if appState.isPremium {
+                    NavigationLink {
+                        YearlyHeatmapView(episodes: episodes)
+                    } label: {
+                        patternCard(
+                            icon: "calendar",
+                            title: "Yearly Overview",
+                            subtitle: "View episode intensity over the past year",
+                            confidence: .likely
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 // Trigger correlations
                 if !triggerCorrelations.isEmpty {
@@ -198,25 +213,19 @@ struct PatternView: View {
             .padding(.top, 8)
         }
         .background(Color(.systemGroupedBackground))
-        .overlay {
-            if isAnalyzing {
-                ProgressView("Analyzing patterns...")
-                    .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            }
-        }
+        .loadingOverlay(isAnalyzing, message: "Analyzing patterns...")
     }
 
     private func patternCard(icon: String, title: String, subtitle: String, confidence: ConfidenceLevel) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 24))
+                .font(.title2)
                 .foregroundStyle(AuraTheme.accent)
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AuraTheme.primary)
                     .multilineTextAlignment(.leading)
 
@@ -230,14 +239,14 @@ struct PatternView: View {
 
             VStack(spacing: 2) {
                 Image(systemName: confidence.icon)
-                    .font(.system(size: 14))
+                    .font(.footnote)
                 Text(confidence.rawValue)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption2.weight(.medium))
             }
             .foregroundStyle(AuraTheme.accent)
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
         .padding(AuraTheme.cardPadding)

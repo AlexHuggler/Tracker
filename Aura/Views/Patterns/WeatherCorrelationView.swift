@@ -11,11 +11,11 @@ struct WeatherCorrelationView: View {
                 // Summary card
                 VStack(spacing: 12) {
                     Image(systemName: "cloud.sun.fill")
-                        .font(.system(size: 40))
+                        .font(.largeTitle)
                         .foregroundStyle(AuraTheme.accent)
 
                     Text(pattern.description)
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.headline)
                         .foregroundStyle(AuraTheme.primary)
                         .multilineTextAlignment(.center)
 
@@ -23,7 +23,7 @@ struct WeatherCorrelationView: View {
                         Image(systemName: pattern.confidence.icon)
                         Text(pattern.confidence.rawValue)
                     }
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(AuraTheme.accent)
                 }
                 .frame(maxWidth: .infinity)
@@ -37,19 +37,19 @@ struct WeatherCorrelationView: View {
                 // Pressure comparison
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Barometric Pressure")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.headline)
                         .foregroundStyle(AuraTheme.primary)
 
                     HStack(spacing: 20) {
                         VStack(spacing: 4) {
                             Text(String(format: "%.1f", pattern.avgPressureDropBeforeEpisode))
-                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .font(.system(.title, design: .rounded, weight: .bold))
                                 .foregroundStyle(AuraTheme.painSevere)
                             Text("hPa")
                                 .font(AuraTheme.captionFont)
                                 .foregroundStyle(.secondary)
                             Text("Episode days")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -62,13 +62,13 @@ struct WeatherCorrelationView: View {
 
                         VStack(spacing: 4) {
                             Text(String(format: "%.1f", pattern.avgPressureDropNonEpisode))
-                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .font(.system(.title, design: .rounded, weight: .bold))
                                 .foregroundStyle(AuraTheme.painMild)
                             Text("hPa")
                                 .font(AuraTheme.captionFont)
                                 .foregroundStyle(.secondary)
                             Text("Non-episode days")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -86,7 +86,7 @@ struct WeatherCorrelationView: View {
                 // Explanation
                 VStack(alignment: .leading, spacing: 8) {
                     Text("What this means")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.headline)
                         .foregroundStyle(AuraTheme.primary)
 
                     Text("On days when you had episodes, the average barometric pressure was \(String(format: "%.1f", pattern.avgPressureDropBeforeEpisode)) hPa compared to \(String(format: "%.1f", pattern.avgPressureDropNonEpisode)) hPa on non-episode days. Changes in barometric pressure are a commonly reported migraine trigger.")
@@ -105,7 +105,7 @@ struct WeatherCorrelationView: View {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
                     Text("Correlation is not causation. Weather data is approximate and based on your city-level location.")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
