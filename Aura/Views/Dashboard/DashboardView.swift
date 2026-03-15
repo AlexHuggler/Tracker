@@ -21,6 +21,16 @@ struct DashboardView: View {
     // 3.2: Dashboard entry animation state
     @State private var appeared = false
 
+    // 4.3: Dose toast with undo
+    @State private var lastDose: MedicationDose?
+    @State private var lastDoseMedName: String?
+    @State private var showingDoseToast = false
+
+    // 4.4: Streak milestone celebration
+    @AppStorage("lastCelebratedStreak") private var lastCelebratedStreak = 0
+    @State private var showingStreakCelebration = false
+    private let milestones = [7, 14, 21, 30, 60, 90, 365]
+
     private var daysSinceLastEpisode: Int {
         guard let lastEpisode = allEpisodes.first else { return -1 }
         return lastEpisode.timestamp.daysBetween(Date())
@@ -126,6 +136,49 @@ struct DashboardView: View {
             }
             .padding(.top, 8)
         }
+        // 4.3: Dose toast overlay
+        .overlay(alignment: .bottom) {
+            if showingDoseToast, let medName = lastDoseMedName {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(AuraTheme.accent)
+                    Text("\(medName) logged")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(AuraTheme.primary)
+                    Spacer()
+                    Button("Undo") {
+                        if let dose = lastDose {
+                            modelContext.delete(dose)
+                            HapticsManager.shared.lightTap()
+                        }
+                        withAnimation { showingDoseToast = false }
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AuraTheme.accent)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background {
+                    RoundedRectangle(cornerRadius: AuraTheme.cornerRadius)
+                        .fill(.regularMaterial)
+                        .shadow(color: .black.opacity(0.1), radius: 8, y: -2)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        // 4.4: Streak celebration overlay
+        .overlay {
+            if showingStreakCelebration {
+                StreakCelebrationOverlay(
+                    streak: appState.currentStreak,
+                    reduceMotion: reduceMotion
+                ) {
+                    withAnimation { showingStreakCelebration = false }
+                }
+            }
+        }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Aura")
         .onAppear {
@@ -137,6 +190,21 @@ struct DashboardView: View {
                 }
             } else {
                 appeared = true
+            }
+
+            // 4.4: Check for streak milestone celebration
+            let streak = appState.currentStreak
+            if milestones.contains(streak) && streak != lastCelebratedStreak {
+                lastCelebratedStreak = streak
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                        showingStreakCelebration = true
+                    }
+                    HapticsManager.shared.saveSuccess()
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 4.3) {
+                    withAnimation { showingStreakCelebration = false }
+                }
             }
         }
     }
@@ -212,12 +280,21 @@ struct DashboardView: View {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 justTakenMedID = med.id
                             }
+                            // 4.3: Show dose toast with undo
+                            lastDose = dose
+                            lastDoseMedName = "\(med.name) \(med.dosage)"
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                showingDoseToast = true
+                            }
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     if justTakenMedID == med.id {
                                         justTakenMedID = nil
                                     }
                                 }
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                                withAnimation { showingDoseToast = false }
                             }
                         } label: {
                             HStack(spacing: 6) {
@@ -307,6 +384,94 @@ struct EpisodeRowView: View {
         .padding(12)
         .auraCard()
         .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Streak Celebration Overlay (4.4)
+
+struct StreakCelebrationOverlay: View {
+    let streak: Int
+    let reduceMotion: Bool
+    let onDismiss: () -> Void
+
+    @State private var showContent = false
+
+    private var milestoneMessage: String {
+        switch streak {
+        case 365: return "One full year of tracking!"
+        case 90: return "90 days strong!"
+        case 60: return "Two months of consistency!"
+        case 30: return "One month milestone!"
+        case 21: return "Three weeks going!"
+        case 14: return "Two weeks in a row!"
+        default: return "One week streak!"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+                .onTapGesture { onDismiss() }
+
+            VStack(spacing: 20) {
+                // Confetti particles using Canvas
+                if !reduceMotion {
+                    TimelineView(.animation(minimumInterval: 0.05)) { timeline in
+                        Canvas { context, size in
+                            let time = timeline.date.timeIntervalSinceReferenceDate
+                            let colors: [Color] = [AuraTheme.accent, AuraTheme.painMild, AuraTheme.painModerate, AuraTheme.statusGood]
+                            for i in 0..<30 {
+                                let seed = Double(i) * 1.7
+                                let x = (sin(seed * 3.14 + time * 2) * 0.4 + 0.5) * size.width
+                                let fallSpeed = (seed.truncatingRemainder(dividingBy: 3) + 1) * 40
+                                let y = ((time * fallSpeed + seed * 50).truncatingRemainder(dividingBy: size.height))
+                                let color = colors[i % colors.count]
+                                context.fill(
+                                    Path(ellipseIn: CGRect(x: x - 3, y: y - 3, width: 6, height: 6)),
+                                    with: .color(color)
+                                )
+                            }
+                        }
+                    }
+                    .frame(height: 200)
+                    .allowsHitTesting(false)
+                }
+
+                VStack(spacing: 12) {
+                    Text("\(streak)")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundStyle(AuraTheme.accent)
+
+                    Text("Day Streak!")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AuraTheme.primary)
+
+                    Text(milestoneMessage)
+                        .font(AuraTheme.bodyFont)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .scaleEffect(showContent ? 1 : 0.7)
+                .opacity(showContent ? 1 : 0)
+                .padding(32)
+                .background {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.regularMaterial)
+                }
+            }
+            .padding(32)
+        }
+        .transition(.opacity)
+        .onAppear {
+            if reduceMotion {
+                showContent = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    showContent = true
+                }
+            }
+        }
     }
 }
 

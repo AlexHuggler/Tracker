@@ -51,6 +51,37 @@ final class NotificationManager {
         center.removeAllPendingNotificationRequests()
     }
 
+    // 4.1: Snooze a medication reminder by rescheduling it
+    func snoozeReminder(for medication: Medication, minutes: Int) async throws {
+        cancelReminder(for: medication)
+
+        let content = UNMutableNotificationContent()
+        content.title = "Snoozed: \(medication.name)"
+        content.body = "\(medication.dosage) — reminder snoozed \(minutes) min"
+        content.sound = .default
+        content.categoryIdentifier = "MEDICATION_REMINDER"
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(minutes * 60), repeats: false)
+        let identifier = "med-reminder-\(medication.id.uuidString)"
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+        try await center.add(request)
+        logger.info("Snoozed \(medication.name) for \(minutes) minutes")
+    }
+
+    // 4.1: Skip today's reminder for a medication
+    func skipToday(for medication: Medication) {
+        cancelReminder(for: medication)
+        logger.info("Skipped today's reminder for \(medication.name)")
+        // The daily repeating reminder will fire again tomorrow since we only
+        // removed the pending request. Re-schedule for tomorrow's normal time.
+        if let reminderTime = medication.reminderTime {
+            Task {
+                try? await scheduleReminder(for: medication, at: reminderTime)
+            }
+        }
+    }
+
     func registerCategories() {
         let snooze15 = UNNotificationAction(
             identifier: "SNOOZE_15",

@@ -2,7 +2,11 @@ import SwiftUI
 
 struct PainSliderView: View {
     @Binding var painLevel: Int
+    var isDimMode: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    // 4.6: Dim mode glow animation
+    @State private var glowPulse = false
 
     private let thumbSize: CGFloat = 44
     private let trackHeight: CGFloat = 16
@@ -57,16 +61,25 @@ struct PainSliderView: View {
                     }
                     .padding(.horizontal, thumbSize / 2)
 
-                    // Thumb
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: thumbSize, height: thumbSize)
-                        .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
-                        .overlay {
+                    // Thumb with optional dim mode glow (4.6)
+                    ZStack {
+                        if isDimMode {
                             Circle()
-                                .stroke(AuraTheme.painColor(for: painLevel), lineWidth: 3)
+                                .fill(AuraTheme.painColor(for: painLevel).opacity(glowPulse ? 0.35 : 0.15))
+                                .frame(width: thumbSize + 24, height: thumbSize + 24)
+                                .blur(radius: 16)
                         }
-                        .offset(x: thumbX)
+
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: thumbSize, height: thumbSize)
+                            .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                            .overlay {
+                                Circle()
+                                    .stroke(AuraTheme.painColor(for: painLevel), lineWidth: 3)
+                            }
+                    }
+                    .offset(x: thumbX)
                         .gesture(
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
@@ -101,6 +114,14 @@ struct PainSliderView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, thumbSize / 2 + 8)
+        }
+        .onAppear {
+            // 4.6: Start glow pulse animation when in dim mode
+            if isDimMode && !reduceMotion {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    glowPulse = true
+                }
+            }
         }
         .accessibilityElement(children: .combine)
         .accessibilityValue("Pain level \(painLevel)")

@@ -26,6 +26,10 @@ struct QuickLogView: View {
     @State private var showingSaveConfirmation = false
     @State private var isExpanded = UserDefaults.standard.bool(forKey: "quickLogWasExpanded")
 
+    // 4.5: Voice input hint
+    @FocusState private var notesFieldFocused: Bool
+    @State private var showingVoiceHint = false
+
     // 2.1: Pre-filled context from Dashboard
     var preselectedDate: Date?
     var preselectedMedicationIDs: Set<UUID> = []
@@ -68,6 +72,12 @@ struct QuickLogView: View {
         !medications.isEmpty && medications.allSatisfy { takenMedications.contains($0.id) }
     }
 
+    // 4.2: Check if all recent triggers are selected
+    private var allRecentTriggersSelected: Bool {
+        let recent = Set(recentTriggers.prefix(5))
+        return !recent.isEmpty && recent.isSubset(of: selectedTriggers)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -85,7 +95,7 @@ struct QuickLogView: View {
                                 .font(.system(size: 20, weight: .medium, design: .rounded))
                                 .foregroundStyle(AuraTheme.primary)
 
-                            PainSliderView(painLevel: $painLevel)
+                            PainSliderView(painLevel: $painLevel, isDimMode: appState.isDimMode)
                         }
                         .padding(.top, 16)
 
@@ -184,6 +194,65 @@ struct QuickLogView: View {
 
                                 Divider()
 
+                                // 4.2: Recent Triggers quick-select
+                                if !recentTriggers.isEmpty {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Text("Recent Triggers")
+                                                .font(AuraTheme.captionFont)
+                                                .foregroundStyle(.secondary)
+
+                                            Spacer()
+
+                                            Button {
+                                                if allRecentTriggersSelected {
+                                                    for trigger in recentTriggers.prefix(5) {
+                                                        selectedTriggers.remove(trigger)
+                                                    }
+                                                } else {
+                                                    // Clear "I don't know" if selecting specific triggers
+                                                    selectedTriggers.remove("I don't know")
+                                                    for trigger in recentTriggers.prefix(5) {
+                                                        if trigger != "I don't know" {
+                                                            selectedTriggers.insert(trigger)
+                                                        }
+                                                    }
+                                                }
+                                                HapticsManager.shared.selectionChanged()
+                                            } label: {
+                                                Text(allRecentTriggersSelected ? "Clear recent" : "Select all recent")
+                                                    .font(.system(size: 13, weight: .medium))
+                                                    .foregroundStyle(AuraTheme.accent)
+                                            }
+                                        }
+
+                                        FlowLayout(spacing: 8) {
+                                            ForEach(recentTriggers.prefix(5), id: \.self) { trigger in
+                                                PillButton(
+                                                    title: trigger,
+                                                    isSelected: selectedTriggers.contains(trigger)
+                                                ) {
+                                                    if trigger == "I don't know" {
+                                                        if selectedTriggers.contains(trigger) {
+                                                            selectedTriggers.remove(trigger)
+                                                        } else {
+                                                            selectedTriggers = [trigger]
+                                                        }
+                                                    } else {
+                                                        selectedTriggers.remove("I don't know")
+                                                        if selectedTriggers.contains(trigger) {
+                                                            selectedTriggers.remove(trigger)
+                                                        } else {
+                                                            selectedTriggers.insert(trigger)
+                                                        }
+                                                    }
+                                                    HapticsManager.shared.selectionChanged()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // Triggers
                                 TriggerPickerView(
                                     selectedTriggers: $selectedTriggers,
@@ -237,16 +306,44 @@ struct QuickLogView: View {
 
                                 Divider()
 
-                                // Notes
+                                // Notes with voice input hint (4.5)
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("Notes")
-                                        .font(AuraTheme.headingFont)
-                                        .foregroundStyle(AuraTheme.primary)
+                                    HStack {
+                                        Text("Notes")
+                                            .font(AuraTheme.headingFont)
+                                            .foregroundStyle(AuraTheme.primary)
+
+                                        Spacer()
+
+                                        // 4.5: Voice input hint button
+                                        Button {
+                                            notesFieldFocused = true
+                                            showingVoiceHint = true
+                                            HapticsManager.shared.lightTap()
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                                                withAnimation { showingVoiceHint = false }
+                                            }
+                                        } label: {
+                                            Image(systemName: "mic.fill")
+                                                .font(.system(size: 14))
+                                                .foregroundStyle(AuraTheme.accent)
+                                                .frame(width: 32, height: 32)
+                                        }
+                                        .accessibilityLabel("Dictate notes")
+                                    }
 
                                     TextField("Anything else to note...", text: $notes, axis: .vertical)
                                         .lineLimit(3...6)
                                         .textFieldStyle(.roundedBorder)
                                         .font(AuraTheme.bodyFont)
+                                        .focused($notesFieldFocused)
+
+                                    if showingVoiceHint {
+                                        Text("Tap the microphone on your keyboard to dictate.")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                            .transition(.opacity)
+                                    }
                                 }
                             }
                             .padding(.horizontal)
